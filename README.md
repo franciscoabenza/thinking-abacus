@@ -1,8 +1,10 @@
 # THINKING ABACUS
 Augmented Epistemology
-Epistemology 2.0
-Features
-- bayesian reasoning toolset
+_Epistemology 2.0_
+
+### Roadmap:
+[-] bayesian reasoning toolset
 - estimating priors
 - elicit & perplexity api
 - decision matrix UI
+- Collective Decision Making tool
