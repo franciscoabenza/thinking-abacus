@@ -8,8 +8,6 @@
 - decision matrix UI
 - Collective Decision Making tool
 
-🎒 Our [inventory assistant](https://chat.openai.com/g/g-oBpMxDEHp-inventory-assistant) will deliver a link to the 
-
 # THINKING ABACUS ![logo](landing_page/frontend/resources/logo_sq.png)
 Augmented Epistemology
 
