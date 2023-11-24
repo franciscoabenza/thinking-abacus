@@ -1,5 +1,6 @@
+// set the picture side by side with the text
 # THINKING ABACUS
-Augmented Epistemology
+Augmented Epistemology ![logo](landing_page/frontend/resources/logo_sq.png)
 
 
 ### Roadmap:
