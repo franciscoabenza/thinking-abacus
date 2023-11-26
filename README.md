@@ -1,6 +1,6 @@
 ![logo](https://raw.githubusercontent.com/franciscoabenza/thinking-abacus/main/landing_page/frontend/resources/logo_sq.png)
 
-<h5 align="right">Augmented Epistemology & Decision Making</h5>
+<h6 align="right">Augmented Epistemology & Decision Making</h6>
 
 
 ### Roadmap:
