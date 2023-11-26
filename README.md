@@ -2,10 +2,12 @@
 
 <h6 align="right">Augmented Epistemology & Decision Making</h6>
 
+
 # GPTs:
 - ☂️ [Thinking Abacus GPT](https://chat.openai.com/g/g-AW3RlBY4I-thinking-abacus) 
   - [Bayesian GPT](https://chat.openai.com/g/g-38nzhDE9y-bayesian-gpt)
   - [Decision Matrix GPT](https://chat.openai.com/g/g-38nzhDE9y-bayesian-gpt)
+
 
 
 ### Roadmap:
