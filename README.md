@@ -8,7 +8,7 @@
   - [Bayesian GPT](https://chat.openai.com/g/g-38nzhDE9y-bayesian-gpt)
   - [Decision Matrix GPT](https://chat.openai.com/g/g-38nzhDE9y-bayesian-gpt)
 
-
+---
 
 ### Roadmap:
 - Dynamically plot [area of probabilities](https://youtube.com/clip/UgkxArhe_jB5vu-Bx-8Y3eBucPG7ulGPoDyX?si=FtMJme0laWyG8uki) for each updated believe
