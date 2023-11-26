@@ -1,8 +1,7 @@
 
-# THINKING ABACUS <img align="right" width="200" height="200" src=https://raw.githubusercontent.com/franciscoabenza/thinking-abacus/main/landing_page/frontend/resources/logo_sq.png>
+<img align="center" width="1326" height="394" src=https://raw.githubusercontent.com/franciscoabenza/thinking-abacus/main/landing_page/frontend/resources/logo_sq.png>
 
-Augmented Epistemology
-
+###### Augmented Epistemology
 
 ### Roadmap:
 - bayesian reasoning toolset
