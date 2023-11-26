@@ -1,7 +1,7 @@
 ![logo](https://raw.githubusercontent.com/franciscoabenza/thinking-abacus/main/landing_page/frontend/resources/logo_sq.png)
 
-// the way you center a title (# title) in md is 
-###### Augmented Epistemology ######
+<h5 align="center">Augmented Epistemology</h5>
+
 
 ### Roadmap:
 - bayesian reasoning toolset
