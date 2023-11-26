@@ -1,6 +1,6 @@
 ![logo](https://raw.githubusercontent.com/franciscoabenza/thinking-abacus/main/landing_page/frontend/resources/logo_sq.png)
 
-<h5 align="center">Augmented Epistemology</h5>
+<h5 align="right">Augmented Epistemology</h5>
 
 
 ### Roadmap:
