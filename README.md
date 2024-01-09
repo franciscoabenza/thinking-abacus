@@ -1,14 +1,14 @@
 <meta property="og:title" content="Your Content Title" />
 <meta property="og:type" content="website" />
 <meta property="og:url" content="https://www.thinkingabacus.com" />
-<meta property="og:image" content="https://raw.githubusercontent.com/franciscoabenza/thinking-abacus/main/landing_page/frontend/resources/transparent.png" />
+<meta property="og:image" content="https://raw.githubusercontent.com/franciscoabenza/thinking-abacus/web/landing_page/frontend/resources/transparent.png" />
 <meta property="og:description" content="Description of your content" />
 
 <meta name="twitter:card" content="summary_large_image" />
 <meta name="twitter:site" content="@thinkingabacus" />
 <meta name="twitter:title" content="Augmented Epistemology" />
-<meta name="twitter:image" content="https://raw.githubusercontent.com/franciscoabenza/thinking-abacus/main/landing_page/frontend/resources/transparent.png" />
-<meta name="twitter:description" content="Description of your content" />
+<meta name="twitter:image" content="https://raw.githubusercontent.com/franciscoabenza/thinking-abacus/web/landing_page/frontend/resources/bayesian_gpt_card.png" />
+<meta name="twitter:description" content="Build context-aware applications" />
 
 ![logo](https://raw.githubusercontent.com/franciscoabenza/thinking-abacus/main/landing_page/frontend/resources/transparent.png)
 
