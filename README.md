@@ -13,3 +13,6 @@
 ### Roadmap:
 - Dynamically plot [area of probabilities](https://youtube.com/clip/UgkxArhe_jB5vu-Bx-8Y3eBucPG7ulGPoDyX?si=FtMJme0laWyG8uki) for each updated believe
 - Publish hero page
+
+
+<iframe src="https://poe.com/s/h1etZKNf2myyWPZlAMzU" allow="fullscreen" allowfullscreen="" style="height:100%;width:100%; aspect-ratio: 16 / 9; "></iframe>
