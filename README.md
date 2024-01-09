@@ -1,7 +1,7 @@
 <meta property="og:title" content="Your Content Title" />
 <meta property="og:type" content="website" />
 <meta property="og:url" content="https://www.thinkingabacus.com" />
-<meta property="og:image" content="https://raw.githubusercontent.com/franciscoabenza/thinking-abacus/web/landing_page/frontend/resources/transparent.png" />
+<meta property="og:image" content="https://raw.githubusercontent.com/franciscoabenza/thinking-abacus/web/landing_page/frontend/resources/bayesian_gpt_card.png" />
 <meta property="og:description" content="Description of your content" />
 
 <meta name="twitter:card" content="summary_large_image" />
