@@ -12,7 +12,4 @@
 
 ### Roadmap:
 - Dynamically plot [area of probabilities](https://youtube.com/clip/UgkxArhe_jB5vu-Bx-8Y3eBucPG7ulGPoDyX?si=FtMJme0laWyG8uki) for each updated believe
-- Publish hero page
-
-
-<iframe src="https://forum.obsidian.md/uploads/default/original/2X/b/b2258a5392af3085e270cbaeb5d97d88e6dfc7ee.gif" allow="fullscreen" "></iframe>
+[x] Publish hero page
