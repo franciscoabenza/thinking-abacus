@@ -5,10 +5,10 @@
 <meta property="og:description" content="Description of your content" />
 
 <meta name="twitter:card" content="summary_large_image" />
-<meta name="twitter:site" content="@yourusername" />
+<meta name="twitter:site" content="@thinkingabacus" />
 <meta name="twitter:title" content="Your Content Title" />
-<meta name="twitter:description" content="Description of your content" />
 <meta name="twitter:image" content="https://raw.githubusercontent.com/franciscoabenza/thinking-abacus/main/landing_page/frontend/resources/transparent.png" />
+<meta name="twitter:description" content="Description of your content" />
 
 ![logo](https://raw.githubusercontent.com/franciscoabenza/thinking-abacus/main/landing_page/frontend/resources/transparent.png)
 
