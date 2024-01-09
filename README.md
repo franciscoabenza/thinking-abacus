@@ -15,4 +15,4 @@
 - Publish hero page
 
 
-<iframe src="https://forum.obsidian.md/uploads/default/original/2X/b/b2258a5392af3085e270cbaeb5d97d88e6dfc7ee.gif" allow="fullscreen" style="height:100%;width:100%;"></iframe>
+<iframe src="https://forum.obsidian.md/uploads/default/original/2X/b/b2258a5392af3085e270cbaeb5d97d88e6dfc7ee.gif" allow="fullscreen" "></iframe>
