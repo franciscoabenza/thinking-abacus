@@ -18,7 +18,7 @@
 # GPTs:
 - #### ☂️ [Thinking Abacus GPT](https://chat.openai.com/g/g-AW3RlBY4I-thinking-abacus)
   - [Bayesian GPT](https://chat.openai.com/g/g-38nzhDE9y-bayesian-gpt)
-  - [Decision Matrix GPT](https://chat.openai.com/g/g-38nzhDE9y-bayesian-gpt)
+  - [Decision Matrix GPT](https://chat.openai.com/g/g-38nzhDE9y-bayesian-gpt) (in construction)
   - [AutoGen Builder GPT](https://chat.openai.com/g/g-EwugVj4zq-autogen-builder) 
 
 ----------------
