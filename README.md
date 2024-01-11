@@ -27,13 +27,17 @@
 - ~~Publish [hero page](https://www.thinkingabacus.com)~~
 - Dynamically plot [area of probabilities](https://youtube.com/clip/UgkxArhe_jB5vu-Bx-8Y3eBucPG7ulGPoDyX?si=FtMJme0laWyG8uki) for each updated believe.
 
-# Dont be shy!
+
+
+
+
+
 <!-- Cal floating-popup embed code begins -->
 <script type="text/javascript">
   (function (C, A, L) { let p = function (a, ar) { a.q.push(ar); }; let d = C.document; C.Cal = C.Cal || function () { let cal = C.Cal; let ar = arguments; if (!cal.loaded) { cal.ns = {}; cal.q = cal.q || []; d.head.appendChild(d.createElement("script")).src = A; cal.loaded = true; } if (ar[0] === L) { const api = function () { p(api, arguments); }; const namespace = ar[1]; api.q = api.q || []; typeof namespace === "string" ? (cal.ns[namespace] = api) && p(api, ar) : p(cal, ar); return; } p(cal, ar); }; })(window, "https://app.cal.com/embed/embed.js", "init");
-Cal("init", "secret", {origin:"https://cal.com"});
+Cal("init", "embedded-web", {origin:"https://cal.com"});
 
-  Cal.ns.secret("floatingButton", {"calLink":"thinkingabacus/secret","config":{"layout":"column_view"},"buttonText":"Book a meeting","buttonColor":"#b1d51f","buttonTextColor":"#000000"});
-  Cal.ns.secret("ui", {"styles":{"branding":{"brandColor":"#b1d51f"}},"hideEventTypeDetails":false,"layout":"column_view"});
+  Cal.ns["embedded-web"]("floatingButton", {"calLink":"thinkingabacus/embedded-web","config":{"layout":"column_view"},"buttonText":"Book Consultancy","buttonColor":"#bfff00","buttonTextColor":"#000000","buttonPosition":"bottom-right"});
+  Cal.ns["embedded-web"]("ui", {"theme":"light","styles":{"branding":{"brandColor":"#bfff00"}},"hideEventTypeDetails":false,"layout":"column_view"});
 </script>
 <!-- Cal floating-popup embed code ends -->
