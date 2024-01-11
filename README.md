@@ -44,7 +44,7 @@
 
 
 
-![logo](https://raw.githubusercontent.com/franciscoabenza/thinking-abacus/main/landing_page/frontend/resources/transparent.png)
+![logo](https://raw.githubusercontent.com/franciscoabenza/thinking-abacus/main/landing_page/frontend/resources/logo-dark.svg)
 
 <h6 align="right">Augmented Epistemology & Decision Making</h6>
 
