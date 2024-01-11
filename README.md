@@ -15,14 +15,14 @@
     body {
         background-color: #000; /* Black background */
         color: #fff; /* White text */
-        font-family: 'Lora', sans-serif;
+        font-family: 'Arial', sans-serif;
         margin: 0;
         padding: 0;
         line-height: 1.6;
     }
 
     a {
-        color: #0096ff; /* Bright color for links */
+        color: #bfff00; /* Bright color for links */
         text-decoration: none;
     }
 
@@ -43,7 +43,7 @@
 </style>
 
 
-![logo](https://raw.githubusercontent.com/franciscoabenza/thinking-abacus/web/landing_page/frontend/resources/logo-dark-no-margins.png)
+![logo](https://raw.githubusercontent.com/franciscoabenza/thinking-abacus/web/landing_page/frontend/resources/logo-dark.png)
 
 <h6 align="right">Augmented Epistemology & Decision Making</h6>
 
