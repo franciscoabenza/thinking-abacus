@@ -61,13 +61,7 @@
 - #### ☂️ [Thinking Abacus GPT](https://chat.openai.com/g/g-AW3RlBY4I-thinking-abacus)
   - [Bayesian GPT](https://chat.openai.com/g/g-38nzhDE9y-bayesian-gpt)
   - [Decision Matrix GPT](https://chat.openai.com/g/g-38nzhDE9y-bayesian-gpt) (in construction)
-  - [AutoGen Builder GPT](https://chat.openai.com/g/g-EwugVj4zq-autogen-builder) 
-
-----------------
-
-### Roadmap:
-- ~~Publish [hero page](https://www.thinkingabacus.com)~~
-- Dynamically plot [area of probabilities](https://youtube.com/clip/UgkxArhe_jB5vu-Bx-8Y3eBucPG7ulGPoDyX?si=FtMJme0laWyG8uki) for each updated believe.
+  - [AutoGen Builder GPT](https://chat.openai.com/g/g-EwugVj4zq-autogen-builder)
 
 
 
