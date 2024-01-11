@@ -12,6 +12,9 @@
 
 
 <style>
+    h1 a[href="https://www.thinkingabacus.com/"] {
+        display: none;
+    }
     body {
         background-color: #000; /* Black background */
         color: #fff; /* White text */
@@ -22,12 +25,12 @@
     }
 
     a {
-        color: #bfff00; /* Bright color for links */
+        color: #00d4ff; /* Bright color for links */
         text-decoration: none;
     }
 
     a:hover {
-        color: #00d4ff; /* Different color for hover state */
+        color: #bfff00; /* Different color for hover state */
     }
 
     h1, h2, h3, h4, h5, h6 {
@@ -37,7 +40,7 @@
     /* Style for horizontal rule */
     hr {
         border: 0;
-        height: 1px;
+        height: 4px;
         background-image: linear-gradient(to right, rgba(255, 255, 255, 0), rgba(255, 255, 255, 0.75), rgba(255, 255, 255, 0));
     }
 </style>
