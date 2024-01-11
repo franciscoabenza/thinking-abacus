@@ -1,7 +1,7 @@
 <meta property="og:title" content="Thinking Abacus" />
 <meta property="og:type" content="website" />
 <meta property="og:url" content="https://www.thinkingabacus.com" />
-<meta property="og:image" content="https://raw.githubusercontent.com/franciscoabenza/thinking-abacus/web/landing_page/frontend/resources/transparent.png" />
+<meta property="og:image" content="https://raw.githubusercontent.com/franciscoabenza/thinking-abacus/web/landing_page/frontend/resources/logo-dark.png" />
 <meta property="og:description" content="Build context-aware applications" />
 
 <meta name="twitter:card" content="summary_large_image" />
@@ -44,7 +44,7 @@
 
 
 
-![logo](https://raw.githubusercontent.com/franciscoabenza/thinking-abacus/web/landing_page/frontend/resources/logo-dark.svg)
+![logo](https://raw.githubusercontent.com/franciscoabenza/thinking-abacus/web/landing_page/frontend/resources/logo-dark-no-margins.svg)
 
 <h5 align="right">Augmented Epistemology & Decision Making</h5>
 
