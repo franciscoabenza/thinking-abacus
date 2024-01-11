@@ -15,7 +15,7 @@
     body {
         background-color: #000; /* Black background */
         color: #fff; /* White text */
-        font-family: 'Arial', sans-serif;
+        font-family: 'Lora', sans-serif;
         margin: 0;
         padding: 0;
         line-height: 1.6;
@@ -46,7 +46,7 @@
 
 ![logo](https://raw.githubusercontent.com/franciscoabenza/thinking-abacus/web/landing_page/frontend/resources/logo-dark-no-margins.png)
 
-<h5 align="right">Augmented Epistemology & Decision Making</h5>
+<h6 align="right">Augmented Epistemology & Decision Making</h6>
 
 
 # GPTs:
