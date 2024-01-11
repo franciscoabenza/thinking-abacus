@@ -44,9 +44,9 @@
 
 
 
-![logo](https://raw.githubusercontent.com/franciscoabenza/thinking-abacus/main/landing_page/frontend/resources/logo-dark.svg)
+![logo](https://raw.githubusercontent.com/franciscoabenza/thinking-abacus/main/landing_page/frontend/resources/logo-dark.png)
 
-<h6 align="right">Augmented Epistemology & Decision Making</h6>
+<h5 align="right">Augmented Epistemology & Decision Making</h5>
 
 
 # GPTs:
