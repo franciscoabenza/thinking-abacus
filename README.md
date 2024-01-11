@@ -10,6 +10,40 @@
 <meta name="twitter:image" content="https://raw.githubusercontent.com/franciscoabenza/thinking-abacus/web/landing_page/frontend/resources/bayesian_gpt_card.png" />
 <meta name="twitter:description" content="Build context-aware applications" />
 
+
+<style>
+    body {
+        background-color: #000; /* Black background */
+        color: #fff; /* White text */
+        font-family: 'Arial', sans-serif;
+        margin: 0;
+        padding: 0;
+        line-height: 1.6;
+    }
+
+    a {
+        color: #0096ff; /* Bright color for links */
+        text-decoration: none;
+    }
+
+    a:hover {
+        color: #00d4ff; /* Different color for hover state */
+    }
+
+    h1, h2, h3, h4, h5, h6 {
+        color: #fff; /* White text for headings */
+    }
+
+    /* Style for horizontal rule */
+    hr {
+        border: 0;
+        height: 1px;
+        background-image: linear-gradient(to right, rgba(255, 255, 255, 0), rgba(255, 255, 255, 0.75), rgba(255, 255, 255, 0));
+    }
+</style>
+
+
+
 ![logo](https://raw.githubusercontent.com/franciscoabenza/thinking-abacus/main/landing_page/frontend/resources/transparent.png)
 
 <h6 align="right">Augmented Epistemology & Decision Making</h6>
