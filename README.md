@@ -75,3 +75,15 @@ Cal("init", "embedded-web", {origin:"https://cal.com"});
   Cal.ns["embedded-web"]("ui", {"theme":"dark","styles":{"branding":{"brandColor":"#bfff00"}},"hideEventTypeDetails":false,"layout":"column_view"});
 </script>
 <!-- Cal floating-popup embed code ends -->
+
+
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-2HLXCK9G2D"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-2HLXCK9G2D');
+</script>
+<!-- Google tag ENDS (gtag.js) -->
