@@ -49,17 +49,9 @@
         height: 4px;
         background-image: linear-gradient(to right, rgba(255, 255, 255, 0), rgba(255, 255, 255, 0.75), rgba(255, 255, 255, 0));
     }
-        #waitingListButton {
-        background-color: blue;
-        color: white;
-        padding: 10px 15px;
-        border: none;
-        border-radius: 5px;
-        cursor: pointer;
-    }
 </style>
 
-<body>
+
 
 ![logo](https://raw.githubusercontent.com/franciscoabenza/thinking-abacus/web/landing_page/frontend/resources/logo-dark.png)
 
@@ -73,21 +65,6 @@
   - [Decision Matrix GPT](https://chat.openai.com/g/g-38nzhDE9y-bayesian-gpt) (in construction)
   - [AutoGen Builder GPT](https://chat.openai.com/g/g-EwugVj4zq-autogen-builder)
 
-
-<title>Join the Waiting List</title>
-<button id="waitingListButton">Join the Waiting List</button>
-<script>
-    document.getElementById('waitingListButton').addEventListener('click', function() {
-        // This is where you handle the click event.
-        // For example, you can display an alert or a form to collect user data.
-        alert('Thank you for your interest! We will notify you when spots open up.');
-        
-        // To collect user data, you might want to display a form here
-        // and then handle the form submission with additional JavaScript.
-    });
-</script>
-
-</body>
 
 
 <!-- Cal floating-popup embed code begins -->
