@@ -59,7 +59,7 @@
     }
 </style>
 
-</body>
+<body>
 
 ![logo](https://raw.githubusercontent.com/franciscoabenza/thinking-abacus/web/landing_page/frontend/resources/logo-dark.png)
 
