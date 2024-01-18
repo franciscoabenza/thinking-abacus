@@ -49,6 +49,14 @@
         height: 4px;
         background-image: linear-gradient(to right, rgba(255, 255, 255, 0), rgba(255, 255, 255, 0.75), rgba(255, 255, 255, 0));
     }
+        #waitingListButton {
+        background-color: blue;
+        color: white;
+        padding: 10px 15px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+    }
 </style>
 
 
@@ -78,10 +86,7 @@
 
         /* Additional styling as needed */
     </style>
-<body>
-
     <button id="waitingListButton">Join the Waiting List</button>
-
     <script>
         document.getElementById('waitingListButton').addEventListener('click', function() {
             // This is where you handle the click event.
@@ -92,7 +97,6 @@
             // and then handle the form submission with additional JavaScript.
         });
     </script>
-    </body>
 
 
 <!-- Cal floating-popup embed code begins -->
