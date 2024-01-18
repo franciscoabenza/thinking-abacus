@@ -57,6 +57,7 @@
 <h6 align="right"> Augmented Epistemology • Decision Making • Agentic Aplications • Behavioural Software • HCI • Meta-Learning • UX • AI • Forecasting </h6>
 
 
+
 ## GPTs:
 - #### ☂️ [Thinking Abacus GPT](https://chat.openai.com/g/g-AW3RlBY4I-thinking-abacus)
   - [Bayesian GPT](https://chat.openai.com/g/g-38nzhDE9y-bayesian-gpt)
@@ -64,6 +65,34 @@
   - [AutoGen Builder GPT](https://chat.openai.com/g/g-EwugVj4zq-autogen-builder)
 
 
+<title>Join the Waiting List</title>
+    <style>
+        #waitingListButton {
+            background-color: blue;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        /* Additional styling as needed */
+    </style>
+<body>
+
+    <button id="waitingListButton">Join the Waiting List</button>
+
+    <script>
+        document.getElementById('waitingListButton').addEventListener('click', function() {
+            // This is where you handle the click event.
+            // For example, you can display an alert or a form to collect user data.
+            alert('Thank you for your interest! We will notify you when spots open up.');
+            
+            // To collect user data, you might want to display a form here
+            // and then handle the form submission with additional JavaScript.
+        });
+    </script>
+    </body>
 
 
 <!-- Cal floating-popup embed code begins -->
