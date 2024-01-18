@@ -74,29 +74,17 @@
 
 
 <title>Join the Waiting List</title>
-    <style>
-        #waitingListButton {
-            background-color: blue;
-            color: white;
-            padding: 10px 15px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-        }
-
-        /* Additional styling as needed */
-    </style>
-    <button id="waitingListButton">Join the Waiting List</button>
-    <script>
-        document.getElementById('waitingListButton').addEventListener('click', function() {
-            // This is where you handle the click event.
-            // For example, you can display an alert or a form to collect user data.
-            alert('Thank you for your interest! We will notify you when spots open up.');
-            
-            // To collect user data, you might want to display a form here
-            // and then handle the form submission with additional JavaScript.
-        });
-    </script>
+<button id="waitingListButton">Join the Waiting List</button>
+<script>
+    document.getElementById('waitingListButton').addEventListener('click', function() {
+        // This is where you handle the click event.
+        // For example, you can display an alert or a form to collect user data.
+        alert('Thank you for your interest! We will notify you when spots open up.');
+        
+        // To collect user data, you might want to display a form here
+        // and then handle the form submission with additional JavaScript.
+    });
+</script>
 
 
 <!-- Cal floating-popup embed code begins -->
