@@ -59,6 +59,7 @@
     }
 </style>
 
+</body>
 
 ![logo](https://raw.githubusercontent.com/franciscoabenza/thinking-abacus/web/landing_page/frontend/resources/logo-dark.png)
 
@@ -85,6 +86,8 @@
         // and then handle the form submission with additional JavaScript.
     });
 </script>
+
+</body>
 
 
 <!-- Cal floating-popup embed code begins -->
