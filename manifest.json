@@ -3,14 +3,14 @@
   "name": "Thinking Abacus",
   "icons": [
     {
-      "src": "/path/to/192x192.png",
+      "src": "https://raw.githubusercontent.com/franciscoabenza/thinking-abacus/web/landing_page/frontend/resources/sq-logo-solid-192.png",
       "sizes": "192x192",
-      "type": "https://raw.githubusercontent.com/franciscoabenza/thinking-abacus/web/landing_page/frontend/resources/sq-logo-solid-192.png"
+      "type": "image/png"
     },
     {
-      "src": "/path/to/512x512.png",
+      "src": "https://raw.githubusercontent.com/franciscoabenza/thinking-abacus/web/landing_page/frontend/resources/sq-logo-centered-512.png",
       "sizes": "512x512",
-      "type": "https://raw.githubusercontent.com/franciscoabenza/thinking-abacus/web/landing_page/frontend/resources/sq-logo-centered-512.png"
+      "type": "image/png"
     }
   ],
   "start_url": "/",
