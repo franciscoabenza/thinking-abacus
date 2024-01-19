@@ -6,6 +6,9 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 
 
+<link rel="icon" href="landing_page/frontend/resources/favicon-32.ico" type="image/x-icon">
+<link rel="shortcut icon" href="landing_page/frontend/resources/favicon-32.ico" type="image/x-icon">
+
 
 <meta name="description" content="Build context-aware applications">
 
