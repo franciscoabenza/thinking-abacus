@@ -1,3 +1,4 @@
+<head>
 <title>Thinking Abacus</title>
 
 <link rel="manifest" href="https://raw.githubusercontent.com/franciscoabenza/thinking-abacus/web/manifest.json">
@@ -62,7 +63,7 @@
     }
 </style>
 
-
+</head>
 
 ![](https://raw.githubusercontent.com/franciscoabenza/thinking-abacus/web/landing_page/frontend/resources/logo-dark.png)
 
