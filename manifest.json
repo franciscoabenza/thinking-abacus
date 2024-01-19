@@ -5,12 +5,12 @@
     {
       "src": "/path/to/192x192.png",
       "sizes": "192x192",
-      "type": "landing_page/frontend/resources/sq-logo-solid-192.png"
+      "type": "thinking-abacus/landing_page/frontend/resources/sq-logo-solid-192.png"
     },
     {
       "src": "/path/to/512x512.png",
       "sizes": "512x512",
-      "type": "landing_page/frontend/resources/sq-logo-centered-512.png"
+      "type": "thinking-abacus/landing_page/frontend/resources/sq-logo-centered-512.png"
     }
   ],
   "start_url": "/",
