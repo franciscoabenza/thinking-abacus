@@ -53,7 +53,7 @@
 
 
 
-![logo](https://raw.githubusercontent.com/franciscoabenza/thinking-abacus/web/landing_page/frontend/resources/logo-dark.png)
+![logo](https://raw.githubusercontent.com/franciscoabenza/thinking-abacus/web/landing_page/frontend/resources/logo-dark-no-margins.png)
 
 <h6 align="right"> Augmented Epistemology • Decision Making • Agentic Aplications • Behavioural Software • HCI • Meta-Learning • UX • AI • Forecasting </h6>
 
