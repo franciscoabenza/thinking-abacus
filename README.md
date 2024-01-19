@@ -1,14 +1,13 @@
-<head>
 <title>Thinking Abacus</title>
 
-<link rel="manifest" href="/manifest.json">
-<link rel="apple-touch-icon" href="landing_page/frontend/resources/sq-logo-solid-192.png">
+<link rel="manifest" href="https://raw.githubusercontent.com/franciscoabenza/thinking-abacus/web/manifest.json">
+<link rel="apple-touch-icon" href="https://raw.githubusercontent.com/franciscoabenza/thinking-abacus/web/landing_page/frontend/resources/sq-logo-solid-192.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 
 
-<link rel="icon" href="landing_page/frontend/resources/favicon-32.ico" type="image/x-icon">
-<link rel="shortcut icon" href="landing_page/frontend/resources/favicon-32.ico" type="image/x-icon">
+<link rel="icon" href="https://raw.githubusercontent.com/franciscoabenza/thinking-abacus/web/landing_page/frontend/resources/favicon-32.ico" type="image/x-icon">
+<link rel="shortcut icon" href="https://raw.githubusercontent.com/franciscoabenza/thinking-abacus/web/landing_page/frontend/resources/favicon-32.ico" type="image/x-icon">
 
 
 <meta name="description" content="Build context-aware applications">
@@ -63,7 +62,7 @@
     }
 </style>
 
-</head>
+
 
 ![](https://raw.githubusercontent.com/franciscoabenza/thinking-abacus/web/landing_page/frontend/resources/logo-dark.png)
 
