@@ -1,7 +1,7 @@
 <title>Thinking Abacus</title>
 
 <link rel="manifest" href="/manifest.json">
-<link rel="apple-touch-icon" href="/path/to/192x192.png">
+<link rel="apple-touch-icon" href="landing_page/frontend/resources/sq-logo-solid-192.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 
