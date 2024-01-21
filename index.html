@@ -1,35 +1,36 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<title>Thinking Abacus</title>
+<!-- #region meta -->
+    <meta charset="UTF-8">
+    <title>Thinking Abacus</title>
 
-<link rel="manifest" href="https://raw.githubusercontent.com/franciscoabenza/thinking-abacus/web/manifest.json">
-<link rel="apple-touch-icon" href="https://raw.githubusercontent.com/franciscoabenza/thinking-abacus/web/landing_page/frontend/resources/sq-logo-solid-192.png">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <link rel="manifest" href="https://raw.githubusercontent.com/franciscoabenza/thinking-abacus/web/manifest.json">
+    <link rel="apple-touch-icon" href="https://raw.githubusercontent.com/franciscoabenza/thinking-abacus/web/landing_page/frontend/resources/sq-logo-solid-192.png">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
 
-<link href="https://fonts.googleapis.com/css2?family=MuseoModerno&display=swap" rel="stylesheet">
-
-
-<link rel="icon" href="https://raw.githubusercontent.com/franciscoabenza/thinking-abacus/web/landing_page/frontend/resources/favicon-32.ico" type="image/x-icon">
-<link rel="shortcut icon" href="https://raw.githubusercontent.com/franciscoabenza/thinking-abacus/web/landing_page/frontend/resources/favicon-32.ico" type="image/x-icon">
+    <link href="https://fonts.googleapis.com/css2?family=MuseoModerno&display=swap" rel="stylesheet">
 
 
-<meta name="description" content="Build context-aware applications">
+    <link rel="icon" href="https://raw.githubusercontent.com/franciscoabenza/thinking-abacus/web/landing_page/frontend/resources/favicon-32.ico" type="image/x-icon">
+    <link rel="shortcut icon" href="https://raw.githubusercontent.com/franciscoabenza/thinking-abacus/web/landing_page/frontend/resources/favicon-32.ico" type="image/x-icon">
 
-<meta property="og:title" content="Augmenting Cognition" />
-<meta property="og:type" content="website" />
-<meta property="og:url" content="https://www.thinkingabacus.com" />
-<meta property="og:image" content="https://raw.githubusercontent.com/franciscoabenza/thinking-abacus/web/landing_page/frontend/resources/meta-tag.png" />
-<meta property="og:description" content="Building context-aware applications" />
 
-<meta name="twitter:card" content="summary_large_image" />
-<meta name="twitter:site" content="@thinkingabacus" />
-<meta name="twitter:title" content="Augmented Epistemology" />
-<meta name="twitter:image" content="https://raw.githubusercontent.com/franciscoabenza/thinking-abacus/web/landing_page/frontend/resources/meta-tag.png" />
-<meta name="twitter:description" content="Build context-aware applications" />
+    <meta name="description" content="Build context-aware applications">
 
+    <meta property="og:title" content="Augmenting Cognition" />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://www.thinkingabacus.com" />
+    <meta property="og:image" content="https://raw.githubusercontent.com/franciscoabenza/thinking-abacus/web/landing_page/frontend/resources/meta-tag.png" />
+    <meta property="og:description" content="Building context-aware applications" />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:site" content="@thinkingabacus" />
+    <meta name="twitter:title" content="Augmented Epistemology" />
+    <meta name="twitter:image" content="https://raw.githubusercontent.com/franciscoabenza/thinking-abacus/web/landing_page/frontend/resources/meta-tag.png" />
+    <meta name="twitter:description" content="Build context-aware applications" />
+<!-- #endregion -->
 
 <style>
     h1 a[href="https://www.thinkingabacus.com/"] {
@@ -54,8 +55,8 @@
     
     body {
         background-color: #000; /* Black background */
-        color: #fff; /* White text */
-
+        color: #ffffff; /* White text */
+        font-family: Arial, Helvetica, sans-serif;
         padding: 7vh 3vw; /* Apply top and bottom padding of 0% of the viewport height, left and right padding of 20% of the viewport width */
         box-sizing: border-box; /* Make sure padding is included in the total width and height */
         line-height: 1.6;
@@ -63,8 +64,9 @@
 
     a {
         color: #ffffff; /* Bright color for links */
-        text-decoration: underline;
-
+        text-decoration: underline; /* Add underline */
+        /* actually no underline is better */
+        text-decoration: none;
     }
 
     a:hover {
@@ -95,18 +97,19 @@
 <img src="https://raw.githubusercontent.com/franciscoabenza/thinking-abacus/web/landing_page/frontend/resources/Vectorlogo-white-svg.svg" alt="Thinking Abacus Logo"">
 </div>
 <h5 align="center"> Augmented Epistemology • Decision Making • Agentic Aplications • Behavioural Software • HCI • Meta-Learning • UX • AI • Forecasting </h5>
-
-<h2>GPTs:</h2>
-<ul>
-    <li>
-        <h4>☂️ <a href="https://chat.openai.com/g/g-AW3RlBY4I-thinking-abacus" target="_blank">Thinking Abacus GPT</a></h4>
-        <ul>
-            <li><a href="https://chat.openai.com/g/g-38nzhDE9y-bayesian-gpt" target="_blank">Bayesian GPT</a></li>
-            <li><a href="https://chat.openai.com/g/g-38nzhDE9y-bayesian-gpt" target="_blank">Decision Matrix GPT</a> (in construction)</li>
-            <li><a href="https://chat.openai.com/g/g-EwugVj4zq-autogen-builder" target="_blank">AutoGen Builder GPT</a></li>
-        </ul>
-    </li>
-</ul>
+<div>
+    <h2>GPTs:</h2>
+    <ul>
+        <li>
+            <h4>☂️ <a href="https://chat.openai.com/g/g-AW3RlBY4I-thinking-abacus" target="_blank">Thinking Abacus GPT</a></h4>
+            <ul>
+                <li><a href="https://chat.openai.com/g/g-38nzhDE9y-bayesian-gpt" target="_blank">Bayesian GPT</a></li>
+                <li><a href="https://chat.openai.com/g/g-38nzhDE9y-bayesian-gpt" target="_blank">Decision Matrix GPT</a> (in construction)</li>
+                <li><a href="https://chat.openai.com/g/g-EwugVj4zq-autogen-builder" target="_blank">AutoGen Builder GPT</a></li>
+            </ul>
+        </li>
+    </ul>
+<div>
 
 </body>
 
