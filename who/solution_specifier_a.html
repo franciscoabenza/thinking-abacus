@@ -1,31 +1,46 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Your Page Title</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hello World with Chatbot</title>
     <style>
         html, body {
             height: 100%;
             margin: 0;
             padding: 0;
             background-color: black;
+            color: white;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-family: Arial, sans-serif;
         }
-        iframe {
+
+        #hello-world {
+            font-size: 2em;
+            margin-bottom: 20px;
+        }
+
+        #chatbot-container {
             width: 100%;
-            height: 100%;
-            border: none; /* Optional: Removes the border */
+            max-width: 600px;
         }
     </style>
 </head>
 <body>
-<text> hey </text>
-<script type="module">
-    import Chatbot from "https://cdn.jsdelivr.net/npm/flowise-embed/dist/web.js"
-    Chatbot.init({
-        chatflowid: "ccc54ee2-edad-4afb-a0bd-575a55eda8eb",
-        apiHost: "http://localhost:3000",
-    })
-</script>
+    <div id="hello-world">Hello, World!</div>
+    <div id="chatbot-container">
+        <flowise-fullchatbot></flowise-fullchatbot>
+    </div>
 
-
+    <script type="module">
+      import Chatbot from "https://cdn.jsdelivr.net/npm/flowise-embed/dist/web.js";
+      Chatbot.initFull({
+          chatflowid: "ccc54ee2-edad-4afb-a0bd-575a55eda8eb",
+          apiHost: "https://7b82-88-23-104-153.ngrok-free.app", // or whichever ngrok URL 
+      });
+    </script>
 </body>
 </html>
