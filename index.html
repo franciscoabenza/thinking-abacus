@@ -12,7 +12,8 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black">
 
-    <link href="https://fonts.googleapis.com/css2?family=MuseoModerno&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=MuseoModerno:wght@400;700&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
 
 
     <link rel="icon" href="https://raw.githubusercontent.com/franciscoabenza/thinking-abacus/web/landing_page/frontend/resources/favicon-32.ico" type="image/x-icon">
@@ -35,100 +36,160 @@
 <!-- #endregion -->
 
 <style>
+    :root {
+        --primary-color: #bfff00;
+        --bg-color: #000;
+        --text-color: #fff;
+        --transition: all 0.3s ease;
+    }
+
+    html {
+        scroll-behavior: smooth;
+    }
+
+    html, body {
+        min-height: 100vh;
+        margin: 0;
+        padding: 0;
+        background-color: var(--bg-color);
+        overflow-x: hidden;
+    }
+
+    body {
+        color: var(--text-color);
+        font-family: 'Inter', sans-serif;
+        line-height: 1.6;
+        position: relative;
+    }
+
+    .hero-section {
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        position: relative;
+        background: linear-gradient(135deg, #000 0%, #1a1a1a 100%);
+        overflow: hidden;
+    }
+
+    .hero-section::before {
+        content: '';
+        position: absolute;
+        width: 200%;
+        height: 200%;
+        background: radial-gradient(circle, rgba(191,255,0,0.1) 0%, rgba(0,0,0,0) 70%);
+        animation: rotate 20s linear infinite;
+    }
+
+    @keyframes rotate {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+    }
+
+    .logo-container {
+        position: relative;
+        z-index: 1;
+        margin-bottom: 2rem;
+        transition: var(--transition);
+    }
+
+    .logo-container:hover {
+        transform: scale(1.05);
+    }
 
     img {
-        max-width: 100%; /* Make image responsive */
-        height: auto; /* Maintain aspect ratio */
-        display: block; /* Display block to apply margin */
-        margin: 0 auto; /* Center image */
+        max-width: 100%;
+        height: auto;
+        display: block;
+        margin: 0 auto;
+        filter: drop-shadow(0 0 10px rgba(191,255,0,0.3));
     }
 
     .center-content {
         text-align: center;
-         padding-bottom: 25px;
+        padding: 2rem;
+        position: relative;
+        z-index: 1;
     }
 
-    
-    body {
-        background-color: #000; /* Black background */
-        color: #ffffff; /* White text */
-        font-family: Arial, Helvetica, sans-serif;
-        padding: 7vh 3vw; /* Apply top and bottom padding of 0% of the viewport height, left and right padding of 20% of the viewport width */
-        box-sizing: border-box; /* Make sure padding is included in the total width and height */
-        line-height: 1.6;
-    }
-
-    a {
-        color: #ffffff; /* Bright color for links */
-        text-decoration: underline; /* Add underline */
-        /* actually no underline is better */
-        text-decoration: none;
-    }
-
-    a:hover {
-        color: #bfff00; /* Different color for hover state */
-    }
-    
-    h1, h2, h3, h4, h5, h6 {
-        color: #fff; /* White text for headings */
-    }
     h5 {
-        color: #ffffffb7; /* White text for headings */
-        padding-bottom: 25px;
-        
+        color: rgba(255, 255, 255, 0.8);
         font-family: 'MuseoModerno', sans-serif;
-        font-weight: 700; /* Use the light variant of the font */
-    }
-
-    /* Style for horizontal rule */
-    hr {
-        border: 0;
-        height: 4px;
-        background-image: linear-gradient(to right, rgba(255, 255, 255, 0), rgba(255, 255, 255, 0.75), rgba(255, 255, 255, 0));
+        font-weight: 700;
+        font-size: 1.2rem;
+        margin: 2rem 0;
+        line-height: 1.8;
+        text-shadow: 0 0 20px rgba(191,255,0,0.2);
     }
 
     .container {
-    max-width: 900px; /* Or any other max width you prefer */
-    margin-left: auto;
-    margin-right: auto;
-    padding-left: 15px; /* Optional: for better spacing */
-    padding-right: 15px; /* Optional: for better spacing */
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 0 2rem;
     }
 
+    a {
+        color: var(--text-color);
+        text-decoration: none;
+        transition: var(--transition);
+        position: relative;
+    }
+
+    a:hover {
+        color: var(--primary-color);
+    }
+
+    a::after {
+        content: '';
+        position: absolute;
+        width: 0;
+        height: 2px;
+        bottom: -2px;
+        left: 0;
+        background-color: var(--primary-color);
+        transition: var(--transition);
+    }
+
+    a:hover::after {
+        width: 100%;
+    }
+
+    hr {
+        border: 0;
+        height: 2px;
+        background: linear-gradient(to right, 
+            transparent, 
+            var(--primary-color), 
+            transparent
+        );
+        margin: 2rem 0;
+    }
+
+    @media (max-width: 768px) {
+        body {
+            padding: 2rem 1rem;
+        }
+        
+        h5 {
+            font-size: 1rem;
+        }
+    }
 </style>
 
 </head>
 
 <body>
-<div class="container">
-<div class="center-content">
-<img src="https://raw.githubusercontent.com/franciscoabenza/thinking-abacus/web/landing_page/frontend/resources/Vectorlogo-white-svg.svg" alt="Thinking Abacus Logo"">
-</div>
-<h5 align="center"> Augmented Epistemology • Decision Making • Agentic Aplications • Behavioural Software • HCI • Meta-Learning • UX • AI • Forecasting </h5>
-<div>
-    <h2>GPTs:</h2>
-    <ul>
-        <li>
-            <h4>☂️ <a href="https://chat.openai.com/g/g-AW3RlBY4I-thinking-abacus" target="_blank">Thinking Abacus GPT</a></h4>
-            <ul>
-                <li><a href="https://chat.openai.com/g/g-38nzhDE9y-bayesian-gpt" target="_blank">Bayesian GPT</a></li>
-                <li><a href="https://chat.openai.com/g/g-38nzhDE9y-bayesian-gpt" target="_blank">Decision Matrix GPT</a> (in construction)</li>
-                <li><a href="https://chat.openai.com/g/g-EwugVj4zq-autogen-builder" target="_blank">AutoGen Builder GPT</a></li>
-            </ul>
-        </li>
-    </ul>
-<div>
-<div>
-    <h2>People:</h2>
-    <ul>
-        <li>
-            <h4> 🧠 <a href="https://franciscoabenza.github.io/public-obsidian-notes" target="_blank">Fran</a></h4>
-            <h4> 🧠 <a href="https://bento.me/klarahelene" target="_blank">Klara</a></h4>
-            <h4> 🧠 <a href="https://www.google.com/maps/place/Cartagena,+Murcia,+Spain/@37.6174117,-0.9885074,14z/data=!3m1!4b1!4m6!3m5!1s0xd634222a43ab56d:0x47d790cefef6f9ff!8m2!3d37.6156944!4d-0.9892242!16zL20vMGc3X2M?entry=ttu" target="_blank">Abraham</a></h4>
-        </li>
-    </ul>
-<div>
-</div> 
+    <div class="hero-section">
+        <div class="container">
+            <div class="center-content">
+                <div class="logo-container animate__animated animate__fadeIn">
+                    <img src="https://raw.githubusercontent.com/franciscoabenza/thinking-abacus/web/landing_page/frontend/resources/Vectorlogo-white-svg.svg" alt="Thinking Abacus Logo">
+                </div>
+                <h5 class="animate__animated animate__fadeInUp">Augmented Epistemology • Decision Making • Agentic Applications • Behavioural Software • HCI • Meta-Learning • UX • AI • Forecasting</h5>
+            </div>
+        </div>
+    </div>
 
 <!-- <script async src="https://js.stripe.com/v3/pricing-table.js"></script>
 <stripe-pricing-table pricing-table-id="prctbl_1QoEbXBDb0ZUzpi14NGCFxwT"
