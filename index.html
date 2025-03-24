@@ -73,18 +73,48 @@
         overflow: hidden;
     }
 
-    .hero-section::before {
+    .hero-section::before,
+    .hero-section::after {
         content: '';
         position: absolute;
-        width: 200%;
-        height: 200%;
-        background: radial-gradient(circle, rgba(191,255,0,0.1) 0%, rgba(0,0,0,0) 70%);
-        animation: rotate 20s linear infinite;
+        width: 300%;
+        height: 300%;
+        top: -100%;
+        left: -100%;
+        background: radial-gradient(circle at center, 
+            rgba(191,255,0,0.05) 0%,
+            rgba(191,255,0,0.02) 30%,
+            rgba(0,0,0,0) 70%
+        );
+        animation: breathe 15s ease-in-out infinite;
     }
 
-    @keyframes rotate {
-        from { transform: rotate(0deg); }
-        to { transform: rotate(360deg); }
+    .hero-section::after {
+        background: radial-gradient(circle at center, 
+            rgba(191,255,0,0.03) 0%,
+            rgba(191,255,0,0.01) 40%,
+            rgba(0,0,0,0) 80%
+        );
+        animation: breathe 20s ease-in-out infinite reverse;
+    }
+
+    @keyframes breathe {
+        0%, 100% {
+            transform: scale(1) rotate(0deg);
+            opacity: 0.5;
+        }
+        25% {
+            transform: scale(1.2) rotate(5deg);
+            opacity: 0.7;
+        }
+        50% {
+            transform: scale(1) rotate(0deg);
+            opacity: 0.5;
+        }
+        75% {
+            transform: scale(0.8) rotate(-5deg);
+            opacity: 0.3;
+        }
     }
 
     .logo-container {
