@@ -419,6 +419,14 @@ Cal("init", "embedded-web", {origin:"https://cal.com"});
       mouseY = e.clientY;
       lastMouseMoveTime = now;
     });
+
+    let isMouseDown = false;
+    document.addEventListener('mousedown', function(e) {
+      isMouseDown = true;
+    });
+    document.addEventListener('mouseup', function(e) {
+      isMouseDown = false;
+    });
     
     // Tab visibility API
     document.addEventListener('visibilitychange', function() {
@@ -635,6 +643,16 @@ Cal("init", "embedded-web", {origin:"https://cal.com"});
         
         p.properties.posX += (Math.cos(directionRad) + sineOffset * Math.cos(directionRad + Math.PI/2)) * moveDistance;
         p.properties.posY += (Math.sin(directionRad) + sineOffset * Math.sin(directionRad + Math.PI/2)) * moveDistance;
+        
+        // Apply gravitational attraction when mouse button is held down
+        if (isMouseDown) {
+          const dx = mouseX - p.properties.posX;
+          const dy = mouseY - p.properties.posY;
+          const dist = Math.sqrt(dx * dx + dy * dy) || 1;
+          const attractionStrength = 1.9; // adjust strength as needed
+          p.properties.posX += (dx / dist) * attractionStrength * (deltaTime / 16);
+          p.properties.posY += (dy / dist) * attractionStrength * (deltaTime / 16);
+        }
         
         // Bounce off edges with slight angle variation for more natural movement
         let bounced = false;
