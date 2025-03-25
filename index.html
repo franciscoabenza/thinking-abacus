@@ -305,58 +305,200 @@ Cal("init", "embedded-web", {origin:"https://cal.com"});
 <!-- Biomimicry Particles Animation -->
 <script>
   document.addEventListener('DOMContentLoaded', function() {
+    /**
+     * Adaptive Biomimicry Particle System
+     * Features:
+     * - Performance-optimized with FPS monitoring and particle count management
+     * - Organic movement patterns with advanced biomimicry behavior
+     * - Responsive to device capabilities with graceful degradation
+     * - Tab visibility awareness for resource optimization
+     */
+    
+    // Performance monitoring
+    const fpsMonitor = {
+      frames: 0,
+      lastTime: performance.now(),
+      lastFpsUpdate: 0,
+      fpsHistory: [],
+      weightedFpsHistory: [],
+      stableRange: { min: 45, max: 60 }, // FPS range considered "stable"
+      stabilizationPeriod: 1000, // ms to wait after adjustment before making new ones
+      lastAdjustmentTime: 0,
+      
+      // Calculate FPS with priority given to recent frames
+      getWeightedFPS: function() {
+        if (this.weightedFpsHistory.length === 0) return 60;
+        
+        // Calculate weighted average with more recent frames having higher weight
+        let totalWeight = 0;
+        let weightedSum = 0;
+        
+        for (let i = 0; i < this.weightedFpsHistory.length; i++) {
+          // Weight increases linearly with index (more recent = higher weight)
+          const weight = i + 1;
+          weightedSum += this.weightedFpsHistory[i] * weight;
+          totalWeight += weight;
+        }
+        
+        return weightedSum / totalWeight;
+      },
+      
+      update: function() {
+        const now = performance.now();
+        this.frames++;
+        
+        // Update FPS counter every 500ms
+        if (now - this.lastFpsUpdate >= 500) {
+          const fps = (this.frames * 1000) / (now - this.lastFpsUpdate);
+          this.fpsHistory.push(fps);
+          this.weightedFpsHistory.push(fps);
+          
+          // Keep history at manageable size
+          if (this.fpsHistory.length > 10) this.fpsHistory.shift();
+          if (this.weightedFpsHistory.length > 5) this.weightedFpsHistory.shift();
+          
+          this.lastFpsUpdate = now;
+          this.frames = 0;
+        }
+      },
+      
+      // Check if we should adjust particle count
+      shouldAdjustParticles: function() {
+        const now = performance.now();
+        
+        // Respect stabilization period
+        if (now - this.lastAdjustmentTime < this.stabilizationPeriod) {
+          return false;
+        }
+        
+        const currentFps = this.getWeightedFPS();
+        
+        // Only adjust if we're outside the stable range
+        if (currentFps < this.stableRange.min || currentFps > this.stableRange.max) {
+          this.lastAdjustmentTime = now;
+          return true;
+        }
+        
+        return false;
+      }
+    };
+    
+    // Particle system configuration
+    const config = {
+      minParticles: 10,
+      maxParticles: 100,
+      initialParticles: 40,
+      currentParticleCount: 40,
+      particleCreationBatch: 5, // How many particles to add/remove at once
+      mouseInteractionRadius: 200,
+      cornerInfluenceMax: 4,
+      mouseInfluenceMax: 2,
+      usageMode: {
+        active: true, // Tab is visible
+        lastFrameTime: 0,
+        throttleFactor: 1 // 1 = full speed, >1 = throttled
+      }
+    };
+    
+    // DOM Elements
     const particlesContainer = document.getElementById('particles');
-    const particleCount = 55; // Increased particle count
     const particles = [];
     
+    // Mouse tracking with throttling
     let mouseX = window.innerWidth;
     let mouseY = window.innerHeight;
+    let lastMouseMoveTime = 0;
+    const mouseMoveThrottle = 16; // ~60fps
     
-    // Track mouse position
+    // Track mouse position with throttling
     document.addEventListener('mousemove', function(e) {
+      const now = performance.now();
+      if (now - lastMouseMoveTime < mouseMoveThrottle) return;
+      
       mouseX = e.clientX;
       mouseY = e.clientY;
-      
-      // Update excitement based on proximity to bottom right corner
-      updateParticleExcitement();
+      lastMouseMoveTime = now;
     });
     
-    function createParticle() {
+    // Tab visibility API
+    document.addEventListener('visibilitychange', function() {
+      config.usageMode.active = document.visibilityState === 'visible';
+      
+      if (config.usageMode.active) {
+        // Reset frame timing when becoming visible again
+        config.usageMode.lastFrameTime = performance.now();
+        config.usageMode.throttleFactor = 1;
+        requestAnimationFrame(animationLoop);
+      }
+    });
+    
+    // Helper to create an organic particle shape
+    function createOrganicShape() {
+      const radiusSegments = []; 
+      // Generate 8 random radius segments between 40% and 60%
+      for (let i = 0; i < 8; i++) {
+        radiusSegments.push(Math.random() * 20 + 40);
+      }
+      
+      // Create border-radius string in format: "a% b% c% d% / e% f% g% h%"
+      return `${radiusSegments[0]}% ${radiusSegments[1]}% ${radiusSegments[2]}% ${radiusSegments[3]}% / ${radiusSegments[4]}% ${radiusSegments[5]}% ${radiusSegments[6]}% ${radiusSegments[7]}%`;
+    }
+    
+    // Create a single particle
+    function createParticle(fadeIn = true) {
       const particle = document.createElement('div');
       particle.className = 'particle';
       
-      // Random properties for each particle
+      // Random properties with biomimetic variation
       const size = Math.random() * 6 + 1;
       
       // Position particles with higher concentration in bottom right
-      const rightBias = Math.random() * Math.random(); // Bias toward right
-      const bottomBias = Math.random() * Math.random(); // Bias toward bottom
+      const rightBias = Math.pow(Math.random(), 1.5); // Stronger bias toward right
+      const bottomBias = Math.pow(Math.random(), 1.5); // Stronger bias toward bottom
       
-      const posX = window.innerWidth * (0.3 + 0.7 * rightBias);
-      const posY = window.innerHeight * (0.3 + 0.7 * bottomBias);
+      const posX = window.innerWidth * (0.2 + 0.8 * rightBias);
+      const posY = window.innerHeight * (0.2 + 0.8 * bottomBias);
       
-      let speed = Math.random() * 0.5 + 0.2;
-      let opacity = Math.random() * 0.4 + 0.1;
+      // Movement properties
+      let speed = Math.random() * 0.4 + 0.1;
+      let opacity = fadeIn ? 0 : (Math.random() * 0.3 + 0.1);
       let direction = Math.random() * 360;
       
-      // Random subtle color variations
-      const hue = 75 + Math.random() * 10; // Green-yellow
+      // Visual properties for biomimicry
+      const hue = 75 + Math.random() * 10; // Green-yellow range
       const saturation = 90 + Math.random() * 10;
       const lightness = 50 + Math.random() * 10;
       
-      // Set initial styles
-      particle.style.width = `${size}px`;
-      particle.style.height = `${size}px`;
-      particle.style.left = `${posX}px`;
-      particle.style.top = `${posY}px`;
-      particle.style.opacity = opacity;
-      particle.style.backgroundColor = `hsla(${hue}, ${saturation}%, ${lightness}%, 0.5)`;
+      // Common style batch - prepare all styles first to avoid layout thrashing
+      const styles = {
+        width: `${size}px`,
+        height: `${size}px`,
+        left: `${posX}px`,
+        top: `${posY}px`,
+        opacity: opacity.toString(),
+        backgroundColor: `hsla(${hue}, ${saturation}%, ${lightness}%, 0.5)`,
+        transition: fadeIn ? 'opacity 0.8s cubic-bezier(0.25, 0.1, 0.25, 1)' : 'all 0.3s cubic-bezier(0.25, 0.1, 0.25, 1)'
+      };
       
-      // Occasionally create different particle shapes
-      if (Math.random() < 0.1) {
-        particle.style.borderRadius = '40% 60% 60% 40% / 60% 30% 70% 40%'; // Organic shape
-        particle.style.animation = `morphShape ${2 + Math.random() * 4}s ease-in-out infinite alternate`;
+      // Different shapes for variety
+      const shapeType = Math.random();
+      if (shapeType < 0.15) {
+        // Organic blob shape that morphs over time
+        styles.borderRadius = createOrganicShape();
+        styles.animation = `morphShape ${2 + Math.random() * 4}s ease-in-out infinite alternate`;
+      } else if (shapeType < 0.3) {
+        // Elongated shape
+        styles.width = `${size * (0.6 + Math.random() * 0.8)}px`;
+        styles.height = `${size * (1.2 + Math.random() * 0.8)}px`;
+        styles.borderRadius = '40% 60%';
+        styles.transform = `rotate(${Math.random() * 360}deg)`;
+      } else {
+        // Circle with varying border-radius
+        styles.borderRadius = '50%';
       }
+      
+      // Apply all styles at once
+      Object.assign(particle.style, styles);
       
       // Save initial properties in an object for animation reference
       const properties = {
@@ -369,19 +511,54 @@ Cal("init", "embedded-web", {origin:"https://cal.com"});
         baseSpeed: speed,
         baseOpacity: opacity,
         phase: Math.random() * Math.PI * 2, // Random phase for sine movement
-        phaseSpeed: 0.01 + Math.random() * 0.02
+        phaseSpeed: 0.01 + Math.random() * 0.02,
+        sinAmplitude: Math.random() * 0.5, // How much sine wave affects movement
+        flockingFactor: 0.03 + Math.random() * 0.04, // How strongly it follows the flock
+        fadeState: fadeIn ? 'fadingIn' : 'visible',
+        fadeProgress: 0,
+        isMorphing: shapeType < 0.15
       };
       
+      // Append and track
       particlesContainer.appendChild(particle);
+      
+      // Trigger reflow and fade in
+      if (fadeIn) {
+        // Force reflow
+        void particle.offsetWidth;
+        particle.style.opacity = opacity.toString();
+      }
+      
+      // Push to particles array
       particles.push({ element: particle, properties });
+      
+      return particle;
     }
     
-    function updateParticleExcitement() {
+    // Remove a particle with animation
+    function removeParticle(index) {
+      const p = particles[index];
+      
+      // Mark for removal and start fade out
+      p.properties.fadeState = 'fadingOut';
+      p.properties.fadeProgress = 0;
+      p.element.style.opacity = '0';
+      
+      // No need to actually remove from DOM yet
+      // The animation loop will handle physical removal after fade completes
+    }
+    
+    // Batch-update particles that need excitement adjustment
+    function batchUpdateParticleExcitement() {
       // Bottom right corner coordinates
       const cornerX = window.innerWidth;
       const cornerY = window.innerHeight;
       
+      // Process all particles
       particles.forEach(p => {
+        // Skip particles that are fading out
+        if (p.properties.fadeState === 'fadingOut') return;
+        
         // Calculate distance from mouse to particle
         const dx = p.properties.posX - mouseX;
         const dy = p.properties.posY - mouseY;
@@ -395,64 +572,101 @@ Cal("init", "embedded-web", {origin:"https://cal.com"});
         // Calculate excitement factor based on proximity to corner
         const maxDistance = Math.sqrt(window.innerWidth * window.innerWidth + window.innerHeight * window.innerHeight);
         const cornerProximity = 1 - (cornerDistance / maxDistance);
-        const cornerExcitement = 1 + (4 * Math.pow(cornerProximity, 2));
+        const cornerExcitement = 1 + (config.cornerInfluenceMax * Math.pow(cornerProximity, 2));
         
-        // Calculate excitement factor based on mouse proximity
-        const mouseExcitement = mouseDistance < 200 ? 1 + (2 * (1 - mouseDistance / 200)) : 1;
+        // Calculate excitement factor based on mouse proximity with smooth falloff
+        const mouseProximity = Math.max(0, 1 - (mouseDistance / config.mouseInteractionRadius));
+        const mouseExcitement = 1 + (config.mouseInfluenceMax * Math.pow(mouseProximity, 2));
         
-        // Apply excitement
+        // Apply excitement factors
         p.properties.speed = p.properties.baseSpeed * cornerExcitement * mouseExcitement;
         p.properties.opacity = Math.min(0.9, p.properties.baseOpacity * (1 + cornerProximity * 2));
         
-        // Update particle appearance
-        p.element.style.opacity = p.properties.opacity;
-        
-        // Scale particles based on excitement
+        // Prepare visual updates
         const scale = 1 + cornerProximity * 0.5;
-        p.element.style.transform = `scale(${scale})`;
-        
-        // Add a glow effect intensified by corner proximity
         const glowIntensity = 6 + (cornerProximity * 8);
-        p.element.style.boxShadow = `0 0 ${glowIntensity}px rgba(191, 255, 0, ${0.3 + cornerProximity * 0.4})`;
+        const glowOpacity = 0.3 + cornerProximity * 0.4;
+        
+        // Batch all style updates
+        const updates = {
+          opacity: p.properties.opacity.toString(),
+          transform: `scale(${scale})`,
+          boxShadow: `0 0 ${glowIntensity}px rgba(191, 255, 0, ${glowOpacity})`
+        };
+        
+        // Apply all updates at once to minimize layout thrashing
+        Object.assign(p.element.style, updates);
       });
     }
     
-    function animateParticles() {
-      particles.forEach(p => {
+    // Move particles according to their properties
+    function moveParticles(deltaTime) {
+      const removalQueue = [];
+      
+      particles.forEach((p, index) => {
+        // Handle fading transitions
+        if (p.properties.fadeState === 'fadingIn') {
+          p.properties.fadeProgress += deltaTime / 800; // 800ms fade in
+          if (p.properties.fadeProgress >= 1) {
+            p.properties.fadeState = 'visible';
+            p.properties.fadeProgress = 0;
+          } else {
+            p.element.style.opacity = (p.properties.baseOpacity * p.properties.fadeProgress).toString();
+          }
+        } else if (p.properties.fadeState === 'fadingOut') {
+          p.properties.fadeProgress += deltaTime / 500; // 500ms fade out
+          if (p.properties.fadeProgress >= 1) {
+            // Mark for removal
+            removalQueue.push(index);
+          }
+        }
+        
         // Update phase for organic movement
-        p.properties.phase += p.properties.phaseSpeed;
+        p.properties.phase += p.properties.phaseSpeed * (deltaTime / 16); // Normalize for 60fps
         
         // Convert direction to radians
         const directionRad = p.properties.direction * (Math.PI / 180);
         
         // Calculate organic movement based on direction, speed and sine waves
-        const sineOffset = Math.sin(p.properties.phase) * 0.5;
-        p.properties.posX += (Math.cos(directionRad) + sineOffset * Math.cos(directionRad + Math.PI/2)) * p.properties.speed;
-        p.properties.posY += (Math.sin(directionRad) + sineOffset * Math.sin(directionRad + Math.PI/2)) * p.properties.speed;
+        const sineOffset = Math.sin(p.properties.phase) * p.properties.sinAmplitude;
+        
+        // Movement distance considering delta time
+        const moveDistance = p.properties.speed * (deltaTime / 16); // Normalize for 60fps
+        
+        p.properties.posX += (Math.cos(directionRad) + sineOffset * Math.cos(directionRad + Math.PI/2)) * moveDistance;
+        p.properties.posY += (Math.sin(directionRad) + sineOffset * Math.sin(directionRad + Math.PI/2)) * moveDistance;
         
         // Bounce off edges with slight angle variation for more natural movement
+        let bounced = false;
+        
         if (p.properties.posX < 0) {
           p.properties.posX = 0;
           p.properties.direction = 180 - p.properties.direction + (Math.random() * 20 - 10);
+          bounced = true;
         } else if (p.properties.posX > window.innerWidth) {
           p.properties.posX = window.innerWidth;
           p.properties.direction = 180 - p.properties.direction + (Math.random() * 20 - 10);
+          bounced = true;
         }
         
         if (p.properties.posY < 0) {
           p.properties.posY = 0;
           p.properties.direction = 360 - p.properties.direction + (Math.random() * 20 - 10);
+          bounced = true;
         } else if (p.properties.posY > window.innerHeight) {
           p.properties.posY = window.innerHeight;
           p.properties.direction = 360 - p.properties.direction + (Math.random() * 20 - 10);
+          bounced = true;
         }
         
-        // Normalize direction to 0-360
-        p.properties.direction = p.properties.direction % 360;
-        if (p.properties.direction < 0) p.properties.direction += 360;
+        // If bounced, normalize direction
+        if (bounced) {
+          p.properties.direction = p.properties.direction % 360;
+          if (p.properties.direction < 0) p.properties.direction += 360;
+        }
         
-        // Particles tend to move toward bottom right corner
-        if (Math.random() < 0.02) {
+        // Biomimicry flocking behavior - particles tend to move toward bottom right
+        if (Math.random() < 0.03 * (deltaTime / 16)) {
           // Calculate direction toward bottom right
           const targetDirection = Math.atan2(
             window.innerHeight - p.properties.posY,
@@ -462,20 +676,128 @@ Cal("init", "embedded-web", {origin:"https://cal.com"});
           // Gradually adjust current direction toward target (biomimicry flocking behavior)
           const angleDistance = (targetDirection - p.properties.direction) % 360;
           const shorterAngleDistance = angleDistance > 180 ? angleDistance - 360 : (angleDistance < -180 ? angleDistance + 360 : angleDistance);
-          p.properties.direction += shorterAngleDistance * 0.05;
+          p.properties.direction += shorterAngleDistance * p.properties.flockingFactor;
         }
         
-        // Update position
-        p.element.style.left = `${p.properties.posX}px`;
-        p.element.style.top = `${p.properties.posY}px`;
+        // Update position - batch both updates
+        Object.assign(p.element.style, {
+          left: `${p.properties.posX}px`,
+          top: `${p.properties.posY}px`
+        });
       });
       
-      requestAnimationFrame(animateParticles);
+      // Process removal queue in reverse order to avoid index shifting issues
+      for (let i = removalQueue.length - 1; i >= 0; i--) {
+        const index = removalQueue[i];
+        particlesContainer.removeChild(particles[index].element);
+        particles.splice(index, 1);
+      }
     }
     
-    // Create initial particles
-    for (let i = 0; i < particleCount; i++) {
-      createParticle();
+    // Adjust particle count based on performance
+    function manageParticleCount() {
+      if (!fpsMonitor.shouldAdjustParticles()) return;
+      
+      const currentFps = fpsMonitor.getWeightedFPS();
+      const performanceBudget = Math.min(Math.max(currentFps, 30), 120); // Cap between 30-120
+      
+      // Calculate optimal particle count
+      let targetCount = config.currentParticleCount;
+      
+      if (performanceBudget < fpsMonitor.stableRange.min) {
+        // Reduce particles if FPS is too low
+        targetCount = Math.max(config.minParticles, 
+          config.currentParticleCount - config.particleCreationBatch);
+      } else if (performanceBudget > fpsMonitor.stableRange.max && config.currentParticleCount < config.maxParticles) {
+        // Increase particles if FPS is high and we're below max
+        targetCount = Math.min(config.maxParticles, 
+          config.currentParticleCount + config.particleCreationBatch);
+      }
+      
+      // Apply changes if needed
+      if (targetCount !== config.currentParticleCount) {
+        const diff = targetCount - config.currentParticleCount;
+        
+        if (diff > 0) {
+          // Add particles
+          for (let i = 0; i < diff; i++) {
+            createParticle(true); // Fade in new particles
+          }
+        } else {
+          // Remove particles
+          const removeCount = Math.min(Math.abs(diff), particles.length - config.minParticles);
+          for (let i = 0; i < removeCount; i++) {
+            // Remove particles from the middle of the screen first (least interesting area)
+            const centerX = window.innerWidth / 2;
+            const centerY = window.innerHeight / 2;
+            
+            let furthestFromCornerIndex = 0;
+            let furthestFromCornerDist = 0;
+            
+            // Find particles furthest from the center
+            for (let j = 0; j < particles.length; j++) {
+              const p = particles[j];
+              // Skip particles that are already fading
+              if (p.properties.fadeState !== 'visible') continue;
+              
+              // Calculate distance from center
+              const dx = p.properties.posX - centerX;
+              const dy = p.properties.posY - centerY;
+              const distFromCenter = Math.sqrt(dx * dx + dy * dy);
+              
+              if (distFromCenter > furthestFromCornerDist) {
+                furthestFromCornerDist = distFromCenter;
+                furthestFromCornerIndex = j;
+              }
+            }
+            
+            // If we found a valid particle, remove it
+            if (furthestFromCornerDist > 0) {
+              removeParticle(furthestFromCornerIndex);
+            }
+          }
+        }
+        
+        // Update count
+        config.currentParticleCount = targetCount;
+      }
+    }
+    
+    // Main animation loop
+    function animationLoop(timestamp) {
+      // Skip if not active (tab not visible)
+      if (!config.usageMode.active) return;
+      
+      // Calculate delta time
+      const deltaTime = config.usageMode.lastFrameTime ? 
+        timestamp - config.usageMode.lastFrameTime : 16.7;
+      config.usageMode.lastFrameTime = timestamp;
+      
+      // Update FPS monitor
+      fpsMonitor.update();
+      
+      // Throttle low-priority operations on slower devices
+      const lowPriorityUpdate = timestamp % (30 * config.usageMode.throttleFactor) < 5;
+      
+      // High priority updates
+      moveParticles(deltaTime);
+      
+      // Medium priority update - run at 60fps or throttled on slower devices
+      if (timestamp % (2 * config.usageMode.throttleFactor) < 1) {
+        batchUpdateParticleExcitement();
+      }
+      
+      // Low priority updates - run occasionally
+      if (lowPriorityUpdate) {
+        manageParticleCount();
+        
+        // Adjust throttling factor based on performance
+        const currentFps = fpsMonitor.getWeightedFPS();
+        config.usageMode.throttleFactor = currentFps < 40 ? 3 : (currentFps < 50 ? 2 : 1);
+      }
+      
+      // Continue loop
+      requestAnimationFrame(animationLoop);
     }
     
     // Add CSS for morphing animation
@@ -491,22 +813,63 @@ Cal("init", "embedded-web", {origin:"https://cal.com"});
     `;
     document.head.appendChild(style);
     
-    // Start animation
-    updateParticleExcitement();
-    animateParticles();
-    
-    // Handle window resize
-    window.addEventListener('resize', function() {
-      // Adjust particles to new window size
-      particles.forEach(p => {
-        if (p.properties.posX > window.innerWidth) {
-          p.properties.posX = window.innerWidth * Math.random();
-        }
-        if (p.properties.posY > window.innerHeight) {
-          p.properties.posY = window.innerHeight * Math.random();
-        }
+    // Initialize the system
+    function initParticleSystem() {
+      // Create initial particles
+      for (let i = 0; i < config.initialParticles; i++) {
+        createParticle(false); // Don't fade in initial particles
+      }
+      
+      // Initialize performance monitor
+      fpsMonitor.lastFpsUpdate = performance.now();
+      fpsMonitor.lastTime = performance.now();
+      
+      // Start the animation loop
+      config.usageMode.lastFrameTime = performance.now();
+      requestAnimationFrame(animationLoop);
+      
+      // Handle window resize
+      window.addEventListener('resize', function() {
+        const width = window.innerWidth;
+        const height = window.innerHeight;
+        
+        // Adjust particles to new window size
+        particles.forEach(p => {
+          if (p.properties.posX > width) {
+            p.properties.posX = width * Math.random();
+          }
+          if (p.properties.posY > height) {
+            p.properties.posY = height * Math.random();
+          }
+        });
       });
-    });
+    }
+    
+    // Detect device capability and set initial configuration
+    function detectDeviceCapability() {
+      // Use browser/device detection to make a best guess at initial settings
+      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+      const isLowEndDevice = isMobile && (navigator.deviceMemory < 4 || navigator.hardwareConcurrency < 4);
+      
+      if (isLowEndDevice) {
+        // Conservative settings for low-end devices
+        config.initialParticles = 15;
+        config.currentParticleCount = 15;
+        config.maxParticles = 30;
+        config.usageMode.throttleFactor = 2;
+      } else if (isMobile) {
+        // Moderate settings for mobile
+        config.initialParticles = 25;
+        config.currentParticleCount = 25;
+        config.maxParticles = 50;
+      }
+      
+      // Initialize with these settings
+      initParticleSystem();
+    }
+    
+    // Start everything
+    detectDeviceCapability();
   });
 </script>
 <!-- Cal floating-popup embed code ends -->
