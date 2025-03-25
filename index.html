@@ -41,6 +41,15 @@
         --bg-color: #000;
         --text-color: #fff;
         --transition: all 0.3s ease;
+        --gradient-x: 50%;
+        --gradient-y: 50%;
+        --blob1-x: 30%;
+        --blob1-y: 40%;
+        --blob2-x: 70%;
+        --blob2-y: 60%;
+        --blob3-x: 45%;
+        --blob3-y: 70%;
+        --text-influence: 0;
     }
 
     html {
@@ -69,52 +78,78 @@
         justify-content: center;
         align-items: center;
         position: relative;
-        background: linear-gradient(135deg, #000 0%, #1a1a1a 100%);
+        background: #000;
         overflow: hidden;
     }
 
-    .hero-section::before,
-    .hero-section::after {
-        content: '';
+    .lava-container {
         position: absolute;
-        width: 300%;
-        height: 300%;
-        top: -100%;
-        left: -100%;
-        background: radial-gradient(circle at center, 
-            rgba(191,255,0,0.05) 0%,
-            rgba(191,255,0,0.02) 30%,
-            rgba(0,0,0,0) 70%
-        );
-        animation: breathe 15s ease-in-out infinite;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        filter: blur(60px);
+        opacity: 0.8;
+        mix-blend-mode: screen;
+        pointer-events: none;
     }
 
-    .hero-section::after {
-        background: radial-gradient(circle at center, 
-            rgba(191,255,0,0.03) 0%,
-            rgba(191,255,0,0.01) 40%,
-            rgba(0,0,0,0) 80%
-        );
-        animation: breathe 20s ease-in-out infinite reverse;
+    .lava-blob {
+        position: absolute;
+        border-radius: 50%;
+        transition: all 0.1s cubic-bezier(0.25, 0.1, 0.25, 1);
+        will-change: transform, opacity, left, top;
     }
 
-    @keyframes breathe {
-        0%, 100% {
-            transform: scale(1) rotate(0deg);
-            opacity: 0.5;
-        }
-        25% {
-            transform: scale(1.2) rotate(5deg);
-            opacity: 0.7;
-        }
-        50% {
-            transform: scale(1) rotate(0deg);
-            opacity: 0.5;
-        }
-        75% {
-            transform: scale(0.8) rotate(-5deg);
-            opacity: 0.3;
-        }
+    .lava-blob-1 {
+        width: 70vh;
+        height: 70vh;
+        background: radial-gradient(circle at center, 
+            rgba(191, 255, 0, 0.2) 0%,
+            rgba(191, 255, 0, 0.05) 60%, 
+            transparent 80%);
+        left: var(--blob1-x);
+        top: var(--blob1-y);
+        transform: translate(-50%, -50%);
+    }
+
+    .lava-blob-2 {
+        width: 40vh;
+        height: 40vh;
+        background: radial-gradient(circle at center, 
+            rgba(191, 255, 0, 0.15) 0%, 
+            rgba(191, 255, 0, 0.03) 70%, 
+            transparent 90%);
+        left: var(--blob2-x);
+        top: var(--blob2-y);
+        transform: translate(-50%, -50%);
+    }
+
+    .lava-blob-3 {
+        width: 55vh;
+        height: 55vh;
+        background: radial-gradient(circle at center, 
+            rgba(191, 255, 0, 0.1) 0%, 
+            rgba(191, 255, 0, 0.04) 65%, 
+            transparent 85%);
+        left: var(--blob3-x);
+        top: var(--blob3-y);
+        transform: translate(-50%, -50%);
+    }
+
+    .reactive-glow {
+        position: absolute;
+        width: 30vw;
+        height: 30vw;
+        background: radial-gradient(circle at center, 
+            rgba(191, 255, 0, 0.05) 0%, 
+            transparent 70%);
+        left: var(--gradient-x);
+        top: var(--gradient-y);
+        transform: translate(-50%, -50%);
+        transition: all 0.5s ease-out;
+        pointer-events: none;
+        z-index: 0;
     }
 
     .logo-container {
@@ -151,6 +186,12 @@
         margin: 2rem 0;
         line-height: 1.8;
         text-shadow: 0 0 20px rgba(191,255,0,0.2);
+        transition: text-shadow 0.5s ease;
+    }
+
+    h5:hover {
+        text-shadow: 0 0 30px rgba(191,255,0,0.4);
+        --text-influence: 1;
     }
 
     .container {
@@ -211,6 +252,12 @@
 
 <body>
     <div class="hero-section">
+        <div class="lava-container">
+            <div class="lava-blob lava-blob-1"></div>
+            <div class="lava-blob lava-blob-2"></div>
+            <div class="lava-blob lava-blob-3"></div>
+            <div class="reactive-glow"></div>
+        </div>
         <div class="container">
             <div class="center-content">
                 <div class="logo-container animate__animated animate__fadeIn">
@@ -220,6 +267,550 @@
             </div>
         </div>
     </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const hero = document.querySelector('.hero-section');
+            const reactiveGlow = document.querySelector('.reactive-glow');
+            const text = document.querySelector('h5');
+            const logo = document.querySelector('.logo-container');
+            
+            // Improved blob physics system with more stable integration
+            class Blob {
+                constructor(element, mass, x, y) {
+                    this.element = element;
+                    this.mass = mass;
+                    // Current state
+                    this.x = x;
+                    this.y = y;
+                    this.vx = 0;
+                    this.vy = 0;
+                    
+                    // Previous state for Verlet integration
+                    this.prevX = x;
+                    this.prevY = y;
+                    
+                    // Force accumulators
+                    this.fx = 0;
+                    this.fy = 0;
+                    
+                    // Appearance
+                    this.baseRadius = element.offsetWidth / 2;
+                    this.radius = this.baseRadius;
+                    this.scale = 1.0;
+                    this.targetScale = 1.0;
+                    
+                    // Damping
+                    this.damping = 0.98;
+                }
+                
+                applyForce(fx, fy) {
+                    this.fx += fx;
+                    this.fy += fy;
+                }
+                
+                integrate(dt) {
+                    // Semi-implicit Euler integration (more stable than explicit)
+                    // Calculate acceleration from force: a = F/m
+                    const ax = this.fx / this.mass;
+                    const ay = this.fy / this.mass;
+                    
+                    // Update velocity (with damping)
+                    this.vx = this.vx * this.damping + ax * dt;
+                    this.vy = this.vy * this.damping + ay * dt;
+                    
+                    // Store previous position for constraints
+                    this.prevX = this.x;
+                    this.prevY = this.y;
+                    
+                    // Update position
+                    this.x += this.vx * dt;
+                    this.y += this.vy * dt;
+                    
+                    // Reset forces
+                    this.fx = 0;
+                    this.fy = 0;
+                }
+                
+                constrain(containerWidth, containerHeight) {
+                    // Boundary constraints with soft collision response
+                    const margin = this.radius * 0.6; // Allow slight overflow for smoother feel
+                    
+                    // Horizontal constraints
+                    if (this.x < margin) {
+                        const penetration = margin - this.x;
+                        this.x = margin + penetration * 0.2; // Slight bounce
+                        this.vx = Math.abs(this.vx) * 0.5; // Lose energy
+                    } else if (this.x > containerWidth - margin) {
+                        const penetration = this.x - (containerWidth - margin);
+                        this.x = containerWidth - margin - penetration * 0.2;
+                        this.vx = -Math.abs(this.vx) * 0.5;
+                    }
+                    
+                    // Vertical constraints
+                    if (this.y < margin) {
+                        const penetration = margin - this.y;
+                        this.y = margin + penetration * 0.2;
+                        this.vy = Math.abs(this.vy) * 0.5;
+                    } else if (this.y > containerHeight - margin) {
+                        const penetration = this.y - (containerHeight - margin);
+                        this.y = containerHeight - margin - penetration * 0.2;
+                        this.vy = -Math.abs(this.vy) * 0.5;
+                    }
+                }
+                
+                updateAppearance() {
+                    // Smooth scale interpolation
+                    this.scale = this.scale + (this.targetScale - this.scale) * 0.1;
+                    this.radius = this.baseRadius * this.scale;
+                    
+                    // Update element position and scale
+                    const rect = hero.getBoundingClientRect();
+                    this.element.style.left = `${(this.x / rect.width) * 100}%`;
+                    this.element.style.top = `${(this.y / rect.height) * 100}%`;
+                    this.element.style.transform = `translate(-50%, -50%) scale(${this.scale})`;
+                }
+            }
+            
+            // Physics system for managing blob interactions
+            class PhysicsSystem {
+                constructor(containerElement) {
+                    this.container = containerElement;
+                    this.blobs = [];
+                    this.timeStep = 1/60; // Fixed time step for stability
+                    this.lastTime = 0;
+                    this.accumulator = 0;
+                    
+                    // Constants
+                    const rect = containerElement.getBoundingClientRect();
+                    this.containerWidth = rect.width;
+                    this.containerHeight = rect.height;
+                    
+                    // Scale forces relative to container size for consistency across screen sizes
+                    this.sizeScaleFactor = Math.min(this.containerWidth, this.containerHeight) / 1000;
+                    
+                    // Physics parameters (scaled appropriately)
+                    this.gravityStrength = 150 * this.sizeScaleFactor;
+                    this.minDistance = 20 * this.sizeScaleFactor;
+                    this.mouseRepelStrength = 800 * this.sizeScaleFactor;
+                    this.mouseInfluenceRadius = Math.min(300, this.containerWidth * 0.3);
+                    this.centerAttractionStrength = 0.5 * this.sizeScaleFactor;
+                    this.centerAttractionRadius = this.containerWidth * 0.4;
+                    
+                    // Non-equilibrium dynamics parameters
+                    this.repulsionStrength = 250 * this.sizeScaleFactor;
+                    this.repulsionRadius = 200 * this.sizeScaleFactor;
+                    this.repulsionPhase = 0;
+                    this.repulsionEnabled = true;
+                    this.centerMode = 'attract'; // 'attract' or 'repel'
+                    this.centerModeChangeInterval = 7000; // ms
+                    this.lastCenterModeChange = 0;
+                    
+                    // Mouse state
+                    this.mouseX = -1000;
+                    this.mouseY = -1000;
+                    this.mousePressed = false;
+                    
+                    // Perlin noise for natural motion
+                    this.noiseOffsets = [];
+                    this.noiseScale = 0.002;
+                    this.noiseStrength = 10 * this.sizeScaleFactor;
+                }
+                
+                addBlob(element, mass, x, y) {
+                    const blob = new Blob(element, mass, x, y);
+                    this.blobs.push(blob);
+                    this.noiseOffsets.push({
+                        x: Math.random() * 1000,
+                        y: Math.random() * 1000
+                    });
+                    return blob;
+                }
+                
+                update(currentTime) {
+                    if (!this.lastTime) {
+                        this.lastTime = currentTime;
+                        requestAnimationFrame(this.update.bind(this));
+                        return;
+                    }
+                    
+                    // Calculate elapsed time and accumulate it
+                    const deltaTime = (currentTime - this.lastTime) / 1000; // in seconds
+                    this.lastTime = currentTime;
+                    
+                    // Cap delta time to prevent spiral of death on slow devices
+                    const cappedDelta = Math.min(deltaTime, 0.1);
+                    this.accumulator += cappedDelta;
+                    
+                    // Fixed timestep loop for stability
+                    while (this.accumulator >= this.timeStep) {
+                        this.fixedUpdate();
+                        this.accumulator -= this.timeStep;
+                    }
+                    
+                    // Update visual state with interpolation for smoothness
+                    const alpha = this.accumulator / this.timeStep;
+                    this.updateVisuals(alpha);
+                    
+                    requestAnimationFrame(this.update.bind(this));
+                }
+                
+                fixedUpdate() {
+                    // Update non-equilibrium dynamics
+                    this.updateNonEquilibriumState();
+                    
+                    // N-body gravitational attraction between blobs
+                    for (let i = 0; i < this.blobs.length; i++) {
+                        const blobA = this.blobs[i];
+                        
+                        // Apply smooth noise-based forces for natural movement
+                        this.applyNoiseForce(blobA, i);
+                        
+                        // Apply center attraction/repulsion to prevent drifting too far
+                        this.applyCenterForce(blobA);
+                        
+                        // Mouse repulsion
+                        this.applyMouseForce(blobA);
+                        
+                        // Inter-blob forces
+                        for (let j = i + 1; j < this.blobs.length; j++) {
+                            const blobB = this.blobs[j];
+                            this.applyInterBlobForces(blobA, blobB);
+                        }
+                        
+                        // Apply global repulsion field if enabled
+                        if (this.repulsionEnabled) {
+                            this.applyRepulsionField(blobA);
+                        }
+                    }
+                }
+                
+                updateNonEquilibriumState() {
+                    // Update repulsion phase for dynamic patterns
+                    this.repulsionPhase += this.timeStep * 0.5;
+                    
+                    // Occasionally switch center mode between attraction and repulsion
+                    const now = Date.now();
+                    if (now - this.lastCenterModeChange > this.centerModeChangeInterval) {
+                        this.centerMode = this.centerMode === 'attract' ? 'repel' : 'attract';
+                        this.lastCenterModeChange = now;
+                    }
+                }
+                
+                applyRepulsionField(blob) {
+                    // Create dynamic repulsion patterns based on position and time
+                    // This generates traveling waves of repulsion across the field
+                    
+                    // Calculate distance from wave centers
+                    const centerX = this.containerWidth / 2;
+                    const centerY = this.containerHeight / 2;
+                    
+                    // Create multiple interference patterns
+                    const dx1 = blob.x - centerX + Math.sin(this.repulsionPhase) * this.containerWidth * 0.3;
+                    const dy1 = blob.y - centerY + Math.cos(this.repulsionPhase * 0.7) * this.containerHeight * 0.3;
+                    const dist1 = Math.sqrt(dx1*dx1 + dy1*dy1);
+                    
+                    const dx2 = blob.x - centerX - Math.sin(this.repulsionPhase * 1.3) * this.containerWidth * 0.2;
+                    const dy2 = blob.y - centerY - Math.cos(this.repulsionPhase * 0.9) * this.containerHeight * 0.2;
+                    const dist2 = Math.sqrt(dx2*dx2 + dy2*dy2);
+                    
+                    // Calculate repulsion waves based on distance
+                    const wave1 = Math.sin((dist1 / this.repulsionRadius) * Math.PI * 2 + this.repulsionPhase);
+                    const wave2 = Math.sin((dist2 / this.repulsionRadius) * Math.PI * 2 - this.repulsionPhase * 0.7);
+                    
+                    // Combine waves and apply force
+                    const combinedWave = (wave1 + wave2) * 0.5;
+                    
+                    if (Math.abs(combinedWave) > 0.1) { // Only apply significant waves
+                        const forceMagnitude = this.repulsionStrength * combinedWave * 0.2;
+                        const angle = Math.atan2(dy1, dx1) + (combinedWave > 0 ? Math.PI : 0);
+                        
+                        const fx = Math.cos(angle) * forceMagnitude;
+                        const fy = Math.sin(angle) * forceMagnitude;
+                        
+                        blob.applyForce(fx, fy);
+                    }
+                }
+                
+                applyNoiseForce(blob, index) {
+                    // Advance noise offset
+                    this.noiseOffsets[index].x += this.timeStep * 0.5;
+                    this.noiseOffsets[index].y += this.timeStep * 0.5;
+                    
+                    // Simple noise approximation (not true Perlin, but good enough)
+                    const noiseX = Math.sin(this.noiseOffsets[index].x) * 
+                                  Math.cos(this.noiseOffsets[index].x * 0.7);
+                    const noiseY = Math.sin(this.noiseOffsets[index].y * 1.3) * 
+                                  Math.cos(this.noiseOffsets[index].y * 0.9);
+                    
+                    blob.applyForce(
+                        noiseX * this.noiseStrength * blob.mass,
+                        noiseY * this.noiseStrength * blob.mass
+                    );
+                }
+                
+                applyCenterForce(blob) {
+                    const centerX = this.containerWidth / 2;
+                    const centerY = this.containerHeight / 2;
+                    
+                    const dx = centerX - blob.x;
+                    const dy = centerY - blob.y;
+                    const distSq = dx * dx + dy * dy;
+                    const dist = Math.sqrt(distSq);
+                    
+                    // Calculate force direction based on current mode
+                    const modeMultiplier = this.centerMode === 'attract' ? 1.0 : -1.0;
+                    
+                    if ((this.centerMode === 'attract' && dist > this.centerAttractionRadius) || 
+                        (this.centerMode === 'repel' && dist < this.containerWidth * 0.45)) {
+                        
+                        // Force magnitude varies based on mode and distance
+                        let forceMagnitude;
+                        
+                        if (this.centerMode === 'attract') {
+                            forceMagnitude = this.centerAttractionStrength * 
+                                           blob.mass * 
+                                           ((dist - this.centerAttractionRadius) / this.containerWidth);
+                        } else {
+                            // Stronger repulsion when closer to center
+                            forceMagnitude = this.centerAttractionStrength * 2.0 * 
+                                           blob.mass * 
+                                           (1.0 - (dist / (this.containerWidth * 0.45)));
+                        }
+                        
+                        const fx = (dx / dist) * forceMagnitude * modeMultiplier;
+                        const fy = (dy / dist) * forceMagnitude * modeMultiplier;
+                        
+                        blob.applyForce(fx, fy);
+                    }
+                }
+                
+                applyMouseForce(blob) {
+                    const dx = this.mouseX - blob.x;
+                    const dy = this.mouseY - blob.y;
+                    const distSq = dx * dx + dy * dy;
+                    const dist = Math.sqrt(distSq);
+                    
+                    if (dist < this.mouseInfluenceRadius) {
+                        // Smooth falloff force - stronger when closer
+                        const influence = 1 - (dist / this.mouseInfluenceRadius);
+                        const forceFalloff = influence * influence; // Quadratic falloff for more natural feel
+                        
+                        // Prevent division by zero and extreme forces
+                        const safeDistSq = Math.max(distSq, this.minDistance * this.minDistance);
+                        
+                        const repelMultiplier = this.mousePressed ? 2.0 : 1.0;
+                        const forceMagnitude = -this.mouseRepelStrength * 
+                                              blob.mass * 
+                                              forceFalloff * 
+                                              repelMultiplier;
+                        
+                        // Normalize direction vector
+                        const fx = (dx / dist) * forceMagnitude;
+                        const fy = (dy / dist) * forceMagnitude;
+                        
+                        blob.applyForce(fx, fy);
+                        
+                        // Smoothly adjust scale based on mouse proximity
+                        const scaleInfluence = this.mousePressed ? 0.4 : 0.2;
+                        blob.targetScale = 1.0 - influence * scaleInfluence;
+                    } else if (blob.targetScale !== 1.0) {
+                        // Gradually reset scale when outside influence
+                        blob.targetScale = 1.0;
+                    }
+                }
+                
+                applyInterBlobForces(blobA, blobB) {
+                    const dx = blobB.x - blobA.x;
+                    const dy = blobB.y - blobA.y;
+                    const distSq = dx * dx + dy * dy;
+                    const dist = Math.sqrt(distSq);
+                    
+                    // Combined radius for collision detection
+                    const combinedRadius = blobA.radius + blobB.radius;
+                    
+                    if (dist < combinedRadius) {
+                        // Collision resolution - softer response for overlapping blobs
+                        const overlap = combinedRadius - dist;
+                        
+                        // Normalized direction
+                        const nx = dx / dist;
+                        const ny = dy / dist;
+                        
+                        // Calculate displacement based on mass ratio
+                        const totalMass = blobA.mass + blobB.mass;
+                        const ratioA = blobB.mass / totalMass;
+                        const ratioB = blobA.mass / totalMass;
+                        
+                        // Move blobs apart proportionally to their mass
+                        const displacementA = overlap * ratioA * 0.5;
+                        const displacementB = overlap * ratioB * 0.5;
+                        
+                        blobA.x -= nx * displacementA;
+                        blobA.y -= ny * displacementA;
+                        blobB.x += nx * displacementB;
+                        blobB.y += ny * displacementB;
+                        
+                        // Calculate impulse for velocity change
+                        const restitution = 0.4; // Bounciness factor
+                        
+                        // Relative velocity
+                        const rvx = blobB.vx - blobA.vx;
+                        const rvy = blobB.vy - blobA.vy;
+                        
+                        // Relative velocity along normal
+                        const velAlongNormal = rvx * nx + rvy * ny;
+                        
+                        // Only separate if objects are moving toward each other
+                        if (velAlongNormal < 0) {
+                            // Calculate impulse scalar
+                            const impulseScalar = -(1 + restitution) * velAlongNormal / 
+                                                 (1/blobA.mass + 1/blobB.mass);
+                            
+                            // Apply impulse
+                            const impulsex = nx * impulseScalar;
+                            const impulsey = ny * impulseScalar;
+                            
+                            blobA.vx -= impulsex / blobA.mass;
+                            blobA.vy -= impulsey / blobA.mass;
+                            blobB.vx += impulsex / blobB.mass;
+                            blobB.vy += impulsey / blobB.mass;
+                        }
+                        
+                    } else if (dist < this.repulsionRadius * 1.5) {
+                        // Medium distance: apply repulsion
+                        const repelFactor = 1.0 - (dist / (this.repulsionRadius * 1.5));
+                        const repelForce = this.repulsionStrength * blobA.mass * blobB.mass * repelFactor * 0.02;
+                        
+                        // Direction (normalized)
+                        const nx = dx / dist;
+                        const ny = dy / dist;
+                        
+                        blobA.applyForce(-nx * repelForce, -ny * repelForce);
+                        blobB.applyForce(nx * repelForce, ny * repelForce);
+                    } else {
+                        // Far distance: weak attraction (much weaker than original)
+                        // Prevent extreme forces at very small distances
+                        const safeDistSq = Math.max(distSq, this.minDistance * this.minDistance);
+                        
+                        // Very weak inverse square attraction
+                        const forceMagnitude = this.gravityStrength * 0.2 * blobA.mass * blobB.mass / safeDistSq;
+                        
+                        const fx = (dx / dist) * forceMagnitude;
+                        const fy = (dy / dist) * forceMagnitude;
+                        
+                        blobA.applyForce(fx, fy);
+                        blobB.applyForce(-fx, -fy);
+                    }
+                }
+                
+                applyConstraints() {
+                    // Apply container bounds
+                    for (const blob of this.blobs) {
+                        blob.constrain(this.containerWidth, this.containerHeight);
+                    }
+                }
+                
+                updateVisuals(interpolationAlpha) {
+                    // Update visual state of all blobs
+                    for (const blob of this.blobs) {
+                        blob.updateAppearance();
+                    }
+                }
+                
+                setMousePosition(x, y) {
+                    this.mouseX = x;
+                    this.mouseY = y;
+                }
+                
+                setMousePressed(pressed) {
+                    this.mousePressed = pressed;
+                }
+                
+                resizeContainer() {
+                    const rect = this.container.getBoundingClientRect();
+                    this.containerWidth = rect.width;
+                    this.containerHeight = rect.height;
+                    
+                    // Update size-dependent parameters
+                    this.sizeScaleFactor = Math.min(this.containerWidth, this.containerHeight) / 1000;
+                    this.mouseInfluenceRadius = Math.min(300, this.containerWidth * 0.3);
+                    this.centerAttractionRadius = this.containerWidth * 0.4;
+                }
+            }
+            
+            // Initialize physics system
+            const physicsSystem = new PhysicsSystem(hero);
+            
+            // Initialize blobs
+            const rect = hero.getBoundingClientRect();
+            const blob1Element = document.querySelector('.lava-blob-1');
+            const blob2Element = document.querySelector('.lava-blob-2');
+            const blob3Element = document.querySelector('.lava-blob-3');
+            
+            physicsSystem.addBlob(blob1Element, 10, rect.width * 0.3, rect.height * 0.4);
+            physicsSystem.addBlob(blob2Element, 5, rect.width * 0.7, rect.height * 0.6);
+            physicsSystem.addBlob(blob3Element, 7, rect.width * 0.45, rect.height * 0.7);
+            
+            // Event listeners
+            document.addEventListener('mousemove', (e) => {
+                const rect = hero.getBoundingClientRect();
+                physicsSystem.setMousePosition(e.clientX - rect.left, e.clientY - rect.top);
+                
+                // Update reactive glow position
+                reactiveGlow.style.left = `${e.clientX}px`;
+                reactiveGlow.style.top = `${e.clientY}px`;
+            });
+            
+            document.addEventListener('mousedown', () => {
+                physicsSystem.setMousePressed(true);
+                reactiveGlow.style.width = '45vw';
+                reactiveGlow.style.height = '45vw';
+                reactiveGlow.style.background = 'radial-gradient(circle at center, rgba(191, 255, 0, 0.15) 0%, transparent 70%)';
+            });
+            
+            document.addEventListener('mouseup', () => {
+                physicsSystem.setMousePressed(false);
+                reactiveGlow.style.width = '30vw';
+                reactiveGlow.style.height = '30vw';
+                reactiveGlow.style.background = 'radial-gradient(circle at center, rgba(191, 255, 0, 0.05) 0%, transparent 70%)';
+            });
+            
+            document.addEventListener('mouseleave', () => {
+                physicsSystem.setMousePosition(-1000, -1000);
+                physicsSystem.setMousePressed(false);
+            });
+            
+            window.addEventListener('resize', () => {
+                physicsSystem.resizeContainer();
+            });
+            
+            // Text interaction
+            text.addEventListener('mouseenter', () => {
+                reactiveGlow.style.background = 'radial-gradient(circle at center, rgba(191, 255, 0, 0.1) 0%, transparent 70%)';
+            });
+            
+            text.addEventListener('mouseleave', () => {
+                reactiveGlow.style.background = 'radial-gradient(circle at center, rgba(191, 255, 0, 0.05) 0%, transparent 70%)';
+            });
+            
+            // Logo interaction
+            logo.addEventListener('mouseenter', () => {
+                reactiveGlow.style.width = '40vw';
+                reactiveGlow.style.height = '40vw';
+                reactiveGlow.style.background = 'radial-gradient(circle at center, rgba(191, 255, 0, 0.12) 0%, transparent 70%)';
+            });
+            
+            logo.addEventListener('mouseleave', () => {
+                reactiveGlow.style.width = '30vw';
+                reactiveGlow.style.height = '30vw';
+                reactiveGlow.style.background = 'radial-gradient(circle at center, rgba(191, 255, 0, 0.05) 0%, transparent 70%)';
+            });
+            
+            // Start physics simulation
+            requestAnimationFrame(physicsSystem.update.bind(physicsSystem));
+        });
+    </script>
 
 <!-- <script async src="https://js.stripe.com/v3/pricing-table.js"></script>
 <stripe-pricing-table pricing-table-id="prctbl_1QoEbXBDb0ZUzpi14NGCFxwT"
