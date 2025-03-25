@@ -110,14 +110,35 @@
         bottom: 0;
         right: 0;
         background: radial-gradient(circle at bottom right, 
-            rgba(191,255,0,0.15) 0%,
+            rgba(191,255,0,0.2) 0%,
             rgba(191,255,0,0.05) 20%,
             rgba(191,255,0,0.01) 40%,
-            rgba(0,0,0,0) 60%
+            rgba(0,0,0,0) 70%
         );
         animation: pulse 4s ease-in-out infinite;
         pointer-events: none;
         z-index: 1;
+    }
+
+    /* Particles container */
+    .particles-container {
+        position: fixed;
+        bottom: 0;
+        right: 0;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        pointer-events: none;
+        z-index: 1;
+    }
+
+    .particle {
+        position: absolute;
+        background-color: rgba(191, 255, 0, 0.5);
+        border-radius: 50%;
+        box-shadow: 0 0 6px rgba(191, 255, 0, 0.3);
+        pointer-events: none;
+        transition: all 0.3s cubic-bezier(0.25, 0.1, 0.25, 1);
     }
 
     @keyframes pulse {
@@ -251,6 +272,7 @@
 <body>
     <div class="hero-section">
         <div class="corner-glow"></div>
+        <div class="particles-container" id="particles"></div>
         <div class="container">
             <div class="center-content">
                 <div class="logo-container animate__animated animate__fadeIn">
@@ -278,6 +300,214 @@ Cal("init", "embedded-web", {origin:"https://cal.com"});
 
   Cal.ns["embedded-web"]("floatingButton", {"calLink":"thinkingabacus/embedded-web","config":{"layout":"column_view"},"buttonText":"Let's talk! Is free","buttonColor":"#bfff00","buttonTextColor":"#000000","buttonPosition":"bottom-right"});
   Cal.ns["embedded-web"]("ui", {"theme":"dark","styles":{"branding":{"brandColor":"#bfff00"}},"hideEventTypeDetails":false,"layout":"column_view"});
+</script>
+
+<!-- Biomimicry Particles Animation -->
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const particlesContainer = document.getElementById('particles');
+    const particleCount = 80; // Increased particle count
+    const particles = [];
+    
+    let mouseX = window.innerWidth;
+    let mouseY = window.innerHeight;
+    
+    // Track mouse position
+    document.addEventListener('mousemove', function(e) {
+      mouseX = e.clientX;
+      mouseY = e.clientY;
+      
+      // Update excitement based on proximity to bottom right corner
+      updateParticleExcitement();
+    });
+    
+    function createParticle() {
+      const particle = document.createElement('div');
+      particle.className = 'particle';
+      
+      // Random properties for each particle
+      const size = Math.random() * 6 + 1;
+      
+      // Position particles with higher concentration in bottom right
+      const rightBias = Math.random() * Math.random(); // Bias toward right
+      const bottomBias = Math.random() * Math.random(); // Bias toward bottom
+      
+      const posX = window.innerWidth * (0.3 + 0.7 * rightBias);
+      const posY = window.innerHeight * (0.3 + 0.7 * bottomBias);
+      
+      let speed = Math.random() * 0.5 + 0.2;
+      let opacity = Math.random() * 0.4 + 0.1;
+      let direction = Math.random() * 360;
+      
+      // Random subtle color variations
+      const hue = 75 + Math.random() * 10; // Green-yellow
+      const saturation = 90 + Math.random() * 10;
+      const lightness = 50 + Math.random() * 10;
+      
+      // Set initial styles
+      particle.style.width = `${size}px`;
+      particle.style.height = `${size}px`;
+      particle.style.left = `${posX}px`;
+      particle.style.top = `${posY}px`;
+      particle.style.opacity = opacity;
+      particle.style.backgroundColor = `hsla(${hue}, ${saturation}%, ${lightness}%, 0.5)`;
+      
+      // Occasionally create different particle shapes
+      if (Math.random() < 0.1) {
+        particle.style.borderRadius = '40% 60% 60% 40% / 60% 30% 70% 40%'; // Organic shape
+        particle.style.animation = `morphShape ${2 + Math.random() * 4}s ease-in-out infinite alternate`;
+      }
+      
+      // Save initial properties in an object for animation reference
+      const properties = {
+        size,
+        posX,
+        posY,
+        speed,
+        opacity,
+        direction,
+        baseSpeed: speed,
+        baseOpacity: opacity,
+        phase: Math.random() * Math.PI * 2, // Random phase for sine movement
+        phaseSpeed: 0.01 + Math.random() * 0.02
+      };
+      
+      particlesContainer.appendChild(particle);
+      particles.push({ element: particle, properties });
+    }
+    
+    function updateParticleExcitement() {
+      // Bottom right corner coordinates
+      const cornerX = window.innerWidth;
+      const cornerY = window.innerHeight;
+      
+      particles.forEach(p => {
+        // Calculate distance from mouse to particle
+        const dx = p.properties.posX - mouseX;
+        const dy = p.properties.posY - mouseY;
+        const mouseDistance = Math.sqrt(dx * dx + dy * dy);
+        
+        // Calculate distance from corner to particle
+        const cdx = cornerX - p.properties.posX;
+        const cdy = cornerY - p.properties.posY;
+        const cornerDistance = Math.sqrt(cdx * cdx + cdy * cdy);
+        
+        // Calculate excitement factor based on proximity to corner
+        const maxDistance = Math.sqrt(window.innerWidth * window.innerWidth + window.innerHeight * window.innerHeight);
+        const cornerProximity = 1 - (cornerDistance / maxDistance);
+        const cornerExcitement = 1 + (4 * Math.pow(cornerProximity, 2));
+        
+        // Calculate excitement factor based on mouse proximity
+        const mouseExcitement = mouseDistance < 200 ? 1 + (2 * (1 - mouseDistance / 200)) : 1;
+        
+        // Apply excitement
+        p.properties.speed = p.properties.baseSpeed * cornerExcitement * mouseExcitement;
+        p.properties.opacity = Math.min(0.9, p.properties.baseOpacity * (1 + cornerProximity * 2));
+        
+        // Update particle appearance
+        p.element.style.opacity = p.properties.opacity;
+        
+        // Scale particles based on excitement
+        const scale = 1 + cornerProximity * 0.5;
+        p.element.style.transform = `scale(${scale})`;
+        
+        // Add a glow effect intensified by corner proximity
+        const glowIntensity = 6 + (cornerProximity * 8);
+        p.element.style.boxShadow = `0 0 ${glowIntensity}px rgba(191, 255, 0, ${0.3 + cornerProximity * 0.4})`;
+      });
+    }
+    
+    function animateParticles() {
+      particles.forEach(p => {
+        // Update phase for organic movement
+        p.properties.phase += p.properties.phaseSpeed;
+        
+        // Convert direction to radians
+        const directionRad = p.properties.direction * (Math.PI / 180);
+        
+        // Calculate organic movement based on direction, speed and sine waves
+        const sineOffset = Math.sin(p.properties.phase) * 0.5;
+        p.properties.posX += (Math.cos(directionRad) + sineOffset * Math.cos(directionRad + Math.PI/2)) * p.properties.speed;
+        p.properties.posY += (Math.sin(directionRad) + sineOffset * Math.sin(directionRad + Math.PI/2)) * p.properties.speed;
+        
+        // Bounce off edges with slight angle variation for more natural movement
+        if (p.properties.posX < 0) {
+          p.properties.posX = 0;
+          p.properties.direction = 180 - p.properties.direction + (Math.random() * 20 - 10);
+        } else if (p.properties.posX > window.innerWidth) {
+          p.properties.posX = window.innerWidth;
+          p.properties.direction = 180 - p.properties.direction + (Math.random() * 20 - 10);
+        }
+        
+        if (p.properties.posY < 0) {
+          p.properties.posY = 0;
+          p.properties.direction = 360 - p.properties.direction + (Math.random() * 20 - 10);
+        } else if (p.properties.posY > window.innerHeight) {
+          p.properties.posY = window.innerHeight;
+          p.properties.direction = 360 - p.properties.direction + (Math.random() * 20 - 10);
+        }
+        
+        // Normalize direction to 0-360
+        p.properties.direction = p.properties.direction % 360;
+        if (p.properties.direction < 0) p.properties.direction += 360;
+        
+        // Particles tend to move toward bottom right corner
+        if (Math.random() < 0.02) {
+          // Calculate direction toward bottom right
+          const targetDirection = Math.atan2(
+            window.innerHeight - p.properties.posY,
+            window.innerWidth - p.properties.posX
+          ) * (180 / Math.PI);
+          
+          // Gradually adjust current direction toward target (biomimicry flocking behavior)
+          const angleDistance = (targetDirection - p.properties.direction) % 360;
+          const shorterAngleDistance = angleDistance > 180 ? angleDistance - 360 : (angleDistance < -180 ? angleDistance + 360 : angleDistance);
+          p.properties.direction += shorterAngleDistance * 0.05;
+        }
+        
+        // Update position
+        p.element.style.left = `${p.properties.posX}px`;
+        p.element.style.top = `${p.properties.posY}px`;
+      });
+      
+      requestAnimationFrame(animateParticles);
+    }
+    
+    // Create initial particles
+    for (let i = 0; i < particleCount; i++) {
+      createParticle();
+    }
+    
+    // Add CSS for morphing animation
+    const style = document.createElement('style');
+    style.textContent = `
+      @keyframes morphShape {
+        0% { border-radius: 40% 60% 60% 40% / 60% 30% 70% 40%; }
+        25% { border-radius: 40% 60% 70% 30% / 50% 60% 30% 60%; }
+        50% { border-radius: 60% 40% 30% 70% / 60% 40% 60% 40%; }
+        75% { border-radius: 70% 30% 50% 50% / 40% 60% 50% 60%; }
+        100% { border-radius: 30% 70% 70% 30% / 50% 40% 60% 50%; }
+      }
+    `;
+    document.head.appendChild(style);
+    
+    // Start animation
+    updateParticleExcitement();
+    animateParticles();
+    
+    // Handle window resize
+    window.addEventListener('resize', function() {
+      // Adjust particles to new window size
+      particles.forEach(p => {
+        if (p.properties.posX > window.innerWidth) {
+          p.properties.posX = window.innerWidth * Math.random();
+        }
+        if (p.properties.posY > window.innerHeight) {
+          p.properties.posY = window.innerHeight * Math.random();
+        }
+      });
+    });
+  });
 </script>
 <!-- Cal floating-popup embed code ends -->
 
