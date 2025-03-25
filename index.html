@@ -122,6 +122,7 @@
         z-index: 1;
         margin-bottom: 2rem;
         transition: var(--transition);
+        user-select: none;
     }
 
     .logo-container:hover {
@@ -134,6 +135,12 @@
         display: block;
         margin: 0 auto;
         filter: drop-shadow(0 0 10px rgba(191,255,0,0.3));
+        -webkit-user-drag: none;
+        -khtml-user-drag: none;
+        -moz-user-drag: none;
+        -o-user-drag: none;
+        
+        pointer-events: none;
     }
 
     .center-content {
