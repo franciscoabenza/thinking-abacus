@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<!-- #region meta -->
+    <meta charset="UTF-8">
+    <title>Thinking Abacus</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <link rel="manifest" href="https://raw.githubusercontent.com/franciscoabenza/thinking-abacus/web/manifest.json">
+    <link rel="apple-touch-icon" href="https://raw.githubusercontent.com/franciscoabenza/thinking-abacus/web/landing_page/frontend/resources/sq-logo-solid-192.png">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+
+    <link rel="icon" href="https://raw.githubusercontent.com/franciscoabenza/thinking-abacus/web/landing_page/frontend/resources/favicon-32.ico" type="image/x-icon">
+    <link rel="shortcut icon" href="https://raw.githubusercontent.com/franciscoabenza/thinking-abacus/web/landing_page/frontend/resources/favicon-32.ico" type="image/x-icon">
+
+    <meta name="description" content="Thinking Abacus — a studio designing agentic systems and decision-support tools that augment human judgment.">
+
+    <meta property="og:title" content="Thinking Abacus" />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://www.thinkingabacus.com" />
+    <meta property="og:image" content="https://raw.githubusercontent.com/franciscoabenza/thinking-abacus/web/landing_page/frontend/resources/meta-tag.png" />
+    <meta property="og:description" content="A studio designing agentic systems and decision-support tools that augment human judgment." />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:site" content="@thinkingabacus" />
+    <meta name="twitter:title" content="Thinking Abacus" />
+    <meta name="twitter:image" content="https://raw.githubusercontent.com/franciscoabenza/thinking-abacus/web/landing_page/frontend/resources/meta-tag.png" />
+    <meta name="twitter:description" content="A studio designing agentic systems and decision-support tools that augment human judgment." />
+<!-- #endregion -->
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+
+<style>
+    :root {
+        --bg: #0a0a0a;
+        --fg: #ededed;
+        --fg-muted: #8a8a8a;
+        --fg-faint: #4a4a4a;
+        --rule: rgba(255, 255, 255, 0.08);
+        --accent: #bfff00;
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+        margin: 0;
+        padding: 0;
+        background: var(--bg);
+        color: var(--fg);
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+        font-weight: 300;
+        font-size: 16px;
+        line-height: 1.6;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        text-rendering: optimizeLegibility;
+    }
+
+    body {
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+    }
+
+    ::selection {
+        background: var(--accent);
+        color: #000;
+    }
+
+    .page {
+        max-width: 640px;
+        width: 100%;
+        margin: 0 auto;
+        padding: 14vh 32px 6vh;
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+    }
+
+    /* Header — small wordmark + icon */
+    header {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 18vh;
+        opacity: 0;
+        animation: fadeUp 0.7s 0.05s ease forwards;
+    }
+
+    header img {
+        width: 26px;
+        height: 26px;
+        display: block;
+        opacity: 0.95;
+    }
+
+    header .wordmark {
+        font-family: 'Instrument Serif', 'Times New Roman', serif;
+        font-size: 1.05rem;
+        letter-spacing: 0.005em;
+        color: var(--fg);
+    }
+
+    /* Hero */
+    h1 {
+        font-family: 'Instrument Serif', 'Times New Roman', serif;
+        font-weight: 400;
+        font-size: clamp(2.6rem, 6.4vw, 4.25rem);
+        line-height: 1.04;
+        letter-spacing: -0.012em;
+        margin: 0 0 1.75rem;
+        opacity: 0;
+        animation: fadeUp 1s 0.25s ease forwards;
+    }
+
+    h1 em {
+        font-style: italic;
+        color: var(--fg-muted);
+    }
+
+    .lede {
+        font-size: 1.0625rem;
+        max-width: 52ch;
+        color: var(--fg);
+        margin: 0 0 3.5rem;
+        opacity: 0;
+        animation: fadeUp 1s 0.45s ease forwards;
+    }
+
+    /* Editorial meta block */
+    .meta {
+        display: grid;
+        grid-template-columns: 110px 1fr;
+        gap: 14px 28px;
+        font-size: 0.875rem;
+        margin: 0 0 3rem;
+        opacity: 0;
+        animation: fadeUp 1s 0.65s ease forwards;
+    }
+
+    .meta dt {
+        margin: 0;
+        color: var(--fg-muted);
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        font-weight: 500;
+        padding-top: 4px;
+    }
+
+    .meta dd {
+        margin: 0;
+        color: var(--fg);
+    }
+
+    .meta dd .sep {
+        color: var(--fg-faint);
+        margin: 0 6px;
+    }
+
+    /* Live status dot — single moment of motion */
+    .status {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .dot {
+        position: relative;
+        display: inline-block;
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: var(--accent);
+        flex-shrink: 0;
+    }
+
+    .dot::after {
+        content: '';
+        position: absolute;
+        inset: -3px;
+        border-radius: 50%;
+        background: var(--accent);
+        opacity: 0.35;
+        animation: ring 2.6s ease-out infinite;
+    }
+
+    /* CTA */
+    .actions {
+        opacity: 0;
+        animation: fadeUp 1s 0.85s ease forwards;
+    }
+
+    .cta {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        padding: 11px 20px 12px;
+        border: 1px solid var(--rule);
+        border-radius: 999px;
+        background: transparent;
+        color: var(--fg);
+        font: inherit;
+        font-size: 0.9rem;
+        cursor: pointer;
+        transition: border-color 0.25s ease, color 0.25s ease, background 0.25s ease, transform 0.25s ease;
+        text-decoration: none;
+    }
+
+    .cta .arrow {
+        transition: transform 0.25s ease;
+        display: inline-block;
+    }
+
+    .cta:hover {
+        border-color: var(--accent);
+        color: var(--accent);
+        background: rgba(191, 255, 0, 0.04);
+    }
+
+    .cta:hover .arrow {
+        transform: translateX(3px);
+    }
+
+    .cta:focus-visible {
+        outline: 1px solid var(--accent);
+        outline-offset: 3px;
+    }
+
+    /* Footer */
+    footer {
+        max-width: 640px;
+        width: 100%;
+        margin: 0 auto;
+        padding: 1.5rem 32px 4vh;
+        border-top: 1px solid var(--rule);
+        font-size: 0.78rem;
+        color: var(--fg-muted);
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        opacity: 0;
+        animation: fadeUp 1s 1.05s ease forwards;
+    }
+
+    footer a {
+        color: var(--fg-muted);
+        text-decoration: none;
+        border-bottom: 1px solid transparent;
+        transition: color 0.2s, border-color 0.2s;
+    }
+
+    footer a:hover {
+        color: var(--accent);
+        border-color: var(--accent);
+    }
+
+    /* Animations */
+    @keyframes fadeUp {
+        from { opacity: 0; transform: translateY(8px); }
+        to   { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes ring {
+        0%   { transform: scale(1);   opacity: 0.35; }
+        100% { transform: scale(2.6); opacity: 0; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        *, *::before, *::after { animation: none !important; transition: none !important; }
+        header, h1, .lede, .meta, .actions, footer { opacity: 1 !important; transform: none !important; }
+    }
+
+    @media (max-width: 600px) {
+        .page { padding: 8vh 22px 4vh; }
+        header { margin-bottom: 11vh; }
+        .meta { grid-template-columns: 1fr; gap: 4px 0; }
+        .meta dt { padding-top: 14px; }
+        .meta dt:first-of-type { padding-top: 0; }
+        footer { padding: 1.25rem 22px 3vh; }
+    }
+</style>
+
+</head>
+
+<body>
+    <main class="page">
+        <header>
+            <img src="https://raw.githubusercontent.com/franciscoabenza/thinking-abacus/web/landing_page/frontend/resources/sq-logo-solid-192.png" alt="Thinking Abacus">
+            <span class="wordmark">Thinking Abacus</span>
+        </header>
+
+        <h1>Software that thinks <em>alongside&nbsp;you.</em></h1>
+
+        <p class="lede">A studio designing agentic systems and decision-support tools — software that augments human judgment, rather than replacing it.</p>
+
+        <dl class="meta">
+            <dt>Practice</dt>
+            <dd>AI <span class="sep">·</span> HCI <span class="sep">·</span> Forecasting <span class="sep">·</span> Decision&#8209;making <span class="sep">·</span> Behavioural software</dd>
+
+            <dt>Status</dt>
+            <dd><span class="status"><span class="dot" aria-hidden="true"></span>Available for engagements in 2026</span></dd>
+        </dl>
+
+        <div class="actions">
+            <button class="cta"
+                    data-cal-namespace="embedded-web"
+                    data-cal-link="thinkingabacus/embedded-web"
+                    data-cal-config='{"layout":"column_view","theme":"dark"}'>
+                Book a conversation
+                <span class="arrow" aria-hidden="true">→</span>
+            </button>
+        </div>
+    </main>
+
+    <footer>
+        <span>Thinking Abacus</span>
+        <span>© 2026</span>
+    </footer>
+
+<!-- Cal inline embed (modal opens on button click) -->
+<script type="text/javascript">
+  (function (C, A, L) { let p = function (a, ar) { a.q.push(ar); }; let d = C.document; C.Cal = C.Cal || function () { let cal = C.Cal; let ar = arguments; if (!cal.loaded) { cal.ns = {}; cal.q = cal.q || []; d.head.appendChild(d.createElement("script")).src = A; cal.loaded = true; } if (ar[0] === L) { const api = function () { p(api, arguments); }; const namespace = ar[1]; api.q = api.q || []; typeof namespace === "string" ? (cal.ns[namespace] = api) && p(api, ar) : p(cal, ar); return; } p(cal, ar); }; })(window, "https://app.cal.com/embed/embed.js", "init");
+  Cal("init", "embedded-web", {origin:"https://cal.com"});
+  Cal.ns["embedded-web"]("ui", {"theme":"dark","styles":{"branding":{"brandColor":"#bfff00"}},"hideEventTypeDetails":false,"layout":"column_view"});
+</script>
+
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-2HLXCK9G2D"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-2HLXCK9G2D');
+</script>
+
+</body>
+</html>
