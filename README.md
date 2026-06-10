@@ -1,6 +1,6 @@
 ![logo](https://raw.githubusercontent.com/franciscoabenza/thinking-abacus/main/landing_page/frontend/resources/transparent.png)
 
-<h6 align="right">Augmented Epistemology & Decision Making</h6>
+<h6 align="right">HCI Design</h6>
 
 
 # GPTs:
