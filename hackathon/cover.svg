@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <defs>
+    <radialGradient id="g" cx="28%" cy="22%" r="80%">
+      <stop offset="0%" stop-color="#1d1d20"/>
+      <stop offset="100%" stop-color="#0a0a0a"/>
+    </radialGradient>
+    <style>
+      text{font-family:-apple-system,'Segoe UI',Helvetica,Arial,sans-serif;fill:#fafafa}
+      .mono{font-family:ui-monospace,Menlo,monospace}
+    </style>
+  </defs>
+  <rect width="1200" height="630" fill="url(#g)"/>
+  <circle cx="980" cy="150" r="240" fill="none" stroke="#ffffff" stroke-opacity="0.05" stroke-width="1"/>
+  <circle cx="980" cy="150" r="150" fill="none" stroke="#ffffff" stroke-opacity="0.07" stroke-width="1"/>
+  <text class="mono" x="84" y="150" font-size="22" letter-spacing="6" fill="#8a8a8e">CURSOR HACKATHON · FIRST PLACE</text>
+  <text x="80" y="300" font-size="86" font-weight="600" letter-spacing="-3">Ten minutes to build.</text>
+  <text x="80" y="392" font-size="86" font-weight="600" letter-spacing="-3">Sixty seconds to win.</text>
+  <text x="84" y="486" font-size="27" fill="#8a8a8e">Four briefs · one beautiful working screen each · all live and clickable</text>
+  <g class="mono" font-size="20" fill="#5c5c60" letter-spacing="1">
+    <text x="84" y="560">01 loading from hell</text>
+    <text x="384" y="560">02 password dungeon</text>
+    <text x="704" y="560">03 vested</text>
+    <text x="884" y="560">04 nurtr</text>
+  </g>
+</svg>
