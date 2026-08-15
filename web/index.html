@@ -2,40 +2,110 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Thinking Abacus — territory</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+  <title>Thinking Abacus — follow a thought</title>
+  <meta name="description" content="A curiosity-led atlas of ideas, questions, prototypes, and fragments from an Obsidian vault." />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="Thinking Abacus — follow what tugs" />
+  <meta property="og:description" content="A living field guide to ideas, prototypes, questions, and strange fragments from an Obsidian vault." />
+  <meta property="og:image" content="__SITE_ORIGIN__/og.png" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta property="og:image:alt" content="Thinking Abacus — Follow what tugs" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Thinking Abacus — follow what tugs" />
+  <meta name="twitter:description" content="A living field guide to ideas, prototypes, questions, and strange fragments from an Obsidian vault." />
+  <meta name="twitter:image" content="__SITE_ORIGIN__/og.png" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#e9e4d8" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@300;400;500&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400&family=Instrument+Serif:ital@0;1&family=Inter:wght@300;400;500&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="./styles.css" />
 </head>
 <body>
-  <div id="stage">
-    <canvas id="map"></canvas>
+  <main id="stage">
+    <canvas id="map" tabindex="0" aria-label="Interactive map of ideas from Fran's Obsidian vault"></canvas>
 
-    <div id="hud">
-      <div id="detail" class="hidden">
-        <div id="detail-name"></div>
-        <div id="detail-note"></div>
+    <header id="masthead">
+      <a id="brand" href="#" aria-label="Thinking Abacus home">
+        <span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i></span>
+        <span>
+          <span class="wordmark">Thinking Abacus</span>
+          <span class="descriptor">a field guide to a restless mind</span>
+        </span>
+      </a>
+      <div id="atlas-meta" aria-label="Atlas statistics">
+        <span><b id="concept-count">24</b> thoughts</span>
+        <span><b id="link-count">26</b> threads</span>
+        <span class="live-note"><i></i> living atlas</span>
       </div>
-    </div>
-
-    <header id="brand">
-      <span class="dot"></span>
-      <span class="wordmark">Thinking Abacus</span>
     </header>
 
-    <div id="dock">
+    <div id="orientation" aria-hidden="true">
+      <span>THE VAULT / <b id="view-label">OVERVIEW</b></span>
+      <span id="coordinates">40° 25′ N · 03° 42′ W</span>
+    </div>
+
+    <section id="welcome" aria-labelledby="welcome-title">
+      <p class="kicker">DON'T START AT THE BEGINNING</p>
+      <h1 id="welcome-title">Pick a shape.<br /><em>Follow what tugs.</em></h1>
+      <p>These are not finished essays. They are live fragments: convictions, prototypes, odd memories, and questions still looking for each other.</p>
+      <button id="begin" type="button">Enter somewhere unexpected <span aria-hidden="true">↗</span></button>
+    </section>
+
+    <aside id="detail" class="hidden" aria-live="polite" aria-label="Selected thought">
+      <div class="detail-rule"></div>
+      <button id="detail-close" class="icon-button" type="button" aria-label="Close thought">×</button>
+      <p id="detail-meta" class="kicker">FROM THE VAULT</p>
+      <h2 id="detail-name"></h2>
+      <p id="detail-fragment"></p>
+      <p id="detail-note"></p>
+      <div id="detail-question-wrap">
+        <span>THIS THOUGHT ASKS</span>
+        <p id="detail-question"></p>
+      </div>
+      <div id="detail-source"></div>
+      <div id="related" aria-label="Related thoughts"></div>
+      <button id="follow-thread" type="button">
+        <span>Follow this thread</span>
+        <span id="follow-preview">somewhere adjacent</span>
+        <b aria-hidden="true">→</b>
+      </button>
+    </aside>
+
+    <nav id="trail" aria-label="Your thought trail">
+      <span class="trail-label">YOUR TRAIL</span>
+      <div id="trail-items"><i class="current"></i><i></i><i></i><i></i><i></i></div>
+      <span id="trail-empty">Nothing followed yet</span>
+    </nav>
+
+    <div id="dock" aria-label="Map controls">
       <button id="voice-button" type="button">
-        <span class="vdot"></span>
+        <span class="sound-mark" aria-hidden="true"><i></i><i></i><i></i></span>
         <span id="voice-label">Talk to Abacus</span>
       </button>
       <button id="mic-toggle" type="button" hidden>Mute</button>
-      <button id="recenter" type="button">Recenter</button>
+      <button id="search-open" type="button"><span aria-hidden="true">⌕</span> Find a thought <kbd>/</kbd></button>
+      <button id="drift" type="button"><span class="spark" aria-hidden="true">✦</span> Surprise me</button>
+      <button id="recenter" type="button" aria-label="Return to overview">Overview</button>
     </div>
 
-    <p id="hint">Drag to pan · scroll to zoom · click a cell to focus · talk to grow the map</p>
-  </div>
+    <p id="hint"><span>DRAG</span> to roam · <span>SCROLL</span> to burrow · <span>CLICK</span> to open</p>
+
+    <section id="search-panel" hidden aria-label="Search thoughts">
+      <div class="search-backdrop"></div>
+      <div class="search-card" role="dialog" aria-modal="true" aria-labelledby="search-title">
+        <div class="search-heading">
+          <p class="kicker">SEARCH BY HUNCH, NOT FOLDER</p>
+          <button id="search-close" class="icon-button" type="button" aria-label="Close search">×</button>
+        </div>
+        <label id="search-title" for="search-input">What are you curious about?</label>
+        <input id="search-input" type="search" autocomplete="off" placeholder="Try ‘how minds grow’ or ‘strange interfaces’" />
+        <div id="search-results"></div>
+        <p class="search-tip"><kbd>↑</kbd><kbd>↓</kbd> choose <kbd>↵</kbd> open <kbd>esc</kbd> close</p>
+      </div>
+    </section>
+  </main>
 
   <audio id="remote-audio" autoplay></audio>
   <script type="module" src="./app.js"></script>

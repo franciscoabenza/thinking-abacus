@@ -74,10 +74,24 @@ async function serveStatic(req, res) {
 
   try {
     const file = await readFile(fileUrl);
+    const extension = extname(fileUrl.pathname);
     res.writeHead(200, {
-      "Content-Type": CONTENT_TYPES[extname(fileUrl.pathname)] || "application/octet-stream",
+      "Content-Type": CONTENT_TYPES[extension] || "application/octet-stream",
     });
-    res.end(req.method === "HEAD" ? undefined : file);
+    if (req.method === "HEAD") {
+      res.end();
+      return;
+    }
+    if (extension === ".html") {
+      const forwardedProto = String(req.headers["x-forwarded-proto"] || "").split(",")[0].trim();
+      const forwardedHost = String(req.headers["x-forwarded-host"] || "").split(",")[0].trim();
+      const protocol = /^https?$/.test(forwardedProto) ? forwardedProto : "http";
+      const requestedHost = forwardedHost || req.headers.host || `${HOST}:${PORT}`;
+      const host = /^[a-z0-9.:[\]-]+$/i.test(requestedHost) ? requestedHost : `${HOST}:${PORT}`;
+      res.end(file.toString("utf8").replaceAll("__SITE_ORIGIN__", `${protocol}://${host}`));
+      return;
+    }
+    res.end(file);
   } catch {
     res.writeHead(404, { "Content-Type": "text/plain; charset=utf-8" });
     res.end("Not found");
