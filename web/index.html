@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Thinking Abacus — territory</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@300;400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <div id="stage">
+    <canvas id="map"></canvas>
+
+    <div id="hud">
+      <div id="detail" class="hidden">
+        <div id="detail-name"></div>
+        <div id="detail-note"></div>
+      </div>
+    </div>
+
+    <header id="brand">
+      <span class="dot"></span>
+      <span class="wordmark">Thinking Abacus</span>
+    </header>
+
+    <div id="dock">
+      <button id="voice-button" type="button">
+        <span class="vdot"></span>
+        <span id="voice-label">Talk to Abacus</span>
+      </button>
+      <button id="mic-toggle" type="button" hidden>Mute</button>
+      <button id="recenter" type="button">Recenter</button>
+    </div>
+
+    <p id="hint">Drag to pan · scroll to zoom · click a cell to focus · talk to grow the map</p>
+  </div>
+
+  <audio id="remote-audio" autoplay></audio>
+  <script type="module" src="./app.js"></script>
+</body>
+</html>

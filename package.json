@@ -1,0 +1,14 @@
+{
+  "name": "thinking-abacus-toy",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "A navigable territory of Fran's concepts, guided (and grown) by a realtime voice agent.",
+  "scripts": {
+    "start": "node server.js",
+    "check": "node --check server.js && node --check web/app.js && node --check web/concepts.js"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

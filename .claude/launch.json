@@ -1,0 +1,12 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "abacus-toy",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["start"],
+      "port": 5174,
+      "autoPort": true
+    }
+  ]
+}
