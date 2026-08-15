@@ -366,13 +366,31 @@ function drawThreads(time) {
   ctx.restore();
 }
 
-function textLines(text, maxWidth, maxLines = 3) {
+// Labels are rasterized once into stable textures. Zoom changes only move those
+// textures through the field; reflow happens at three bands with hysteresis,
+// so line breaks never chatter while the camera eases between frames.
+const labelSprites = new Map();
+let fontGeneration = 0;
+const LABEL_BANDS = {
+  small: { titleSize: 12.5, titleWidth: 62, fragmentSize: 10, fragmentWidth: 78, nominalRadius: 34 },
+  medium: { titleSize: 15, titleWidth: 88, fragmentSize: 11, fragmentWidth: 104, nominalRadius: 52 },
+  large: { titleSize: 18, titleWidth: 122, fragmentSize: 12.5, fragmentWidth: 140, nominalRadius: 76 },
+};
+
+if (document.fonts?.ready) {
+  document.fonts.ready.then(() => {
+    fontGeneration += 1;
+    labelSprites.clear();
+  });
+}
+
+function textLines(measureContext, text, maxWidth, maxLines = 3) {
   const words = text.split(/\s+/);
   const lines = [];
   let line = "";
   for (const word of words) {
     const next = line ? `${line} ${word}` : word;
-    if (ctx.measureText(next).width > maxWidth && line) {
+    if (measureContext.measureText(next).width > maxWidth && line) {
       lines.push(line);
       line = word;
     } else {
@@ -388,47 +406,257 @@ function textLines(text, maxWidth, maxLines = 3) {
   return lines;
 }
 
-function drawLabel(node, index, center, screenRadius, lifted) {
+function ensureTextFluid(node) {
+  if (node._textFluid) return node._textFluid;
+  const seed = hashString(`${node.id}-text-fluid`);
+  node._textFluid = {
+    band: null,
+    visible: node.n >= 9,
+    emphasis: 0.74,
+    fragmentAlpha: 0,
+    anchorX: null,
+    anchorY: null,
+    anchorVx: 0,
+    anchorVy: 0,
+    title: {
+      ox: (((seed >>> 2) % 100) / 100 - 0.5) * 4,
+      oy: (((seed >>> 9) % 100) / 100 - 0.5) * 3,
+      vx: 0,
+      vy: 0,
+    },
+    fragment: {
+      ox: (((seed >>> 15) % 100) / 100 - 0.5) * 4,
+      oy: 12 + (((seed >>> 21) % 100) / 100) * 4,
+      vx: 0,
+      vy: 0,
+    },
+  };
+  return node._textFluid;
+}
+
+function settleTextAnchor(fluid, target) {
+  if (fluid.anchorX == null || fluid.anchorY == null || REDUCED_MOTION) {
+    fluid.anchorX = target[0];
+    fluid.anchorY = target[1];
+    fluid.anchorVx = 0;
+    fluid.anchorVy = 0;
+    return [fluid.anchorX, fluid.anchorY];
+  }
+
+  fluid.anchorVx += (target[0] - fluid.anchorX) * 0.018 * textFrameFactor;
+  fluid.anchorVy += (target[1] - fluid.anchorY) * 0.018 * textFrameFactor;
+  const anchorDrag = Math.pow(0.84, textFrameFactor);
+  fluid.anchorVx *= anchorDrag;
+  fluid.anchorVy *= anchorDrag;
+  fluid.anchorX += fluid.anchorVx * textFrameFactor;
+  fluid.anchorY += fluid.anchorVy * textFrameFactor;
+
+  // A topology change can move the polygon centroid abruptly. Preserve the
+  // viscous transition, but cap lag so the label can never abandon its cell.
+  const dx = fluid.anchorX - target[0];
+  const dy = fluid.anchorY - target[1];
+  const distance = Math.hypot(dx, dy);
+  const maxLag = 22;
+  if (distance > maxLag) {
+    fluid.anchorX = target[0] + (dx / distance) * maxLag;
+    fluid.anchorY = target[1] + (dy / distance) * maxLag;
+  }
+  return [fluid.anchorX, fluid.anchorY];
+}
+
+function chooseLabelBand(fluid, screenRadius) {
+  if (!fluid.band) {
+    fluid.band = screenRadius < 42 ? "small" : screenRadius < 64 ? "medium" : "large";
+    return fluid.band;
+  }
+  if (fluid.band === "small" && screenRadius > 47) fluid.band = "medium";
+  else if (fluid.band === "medium" && screenRadius < 37) fluid.band = "small";
+  else if (fluid.band === "medium" && screenRadius > 70) fluid.band = "large";
+  else if (fluid.band === "large" && screenRadius < 57) fluid.band = "medium";
+  return fluid.band;
+}
+
+function makeLabelSprite(node, bandName, variant, role) {
+  const key = `${fontGeneration}|${node.id}|${bandName}|${variant}|${role}`;
+  if (labelSprites.has(key)) return labelSprites.get(key);
+
+  const band = LABEL_BANDS[bandName];
+  const rasterScale = 2;
+  const measure = document.createElement("canvas").getContext("2d");
+  const isLight = variant === "selected" || variant === "guide";
+  const titleColor = isLight ? "#f7f3e9" : PAL.ink;
+  const signalColor = variant === "selected" || variant === "guide" ? PAL.acid : PAL.blue;
+  let lines;
+  let font;
+  let lineHeight;
+  let showKind = false;
+  let maxWidth;
+
+  if (role === "title") {
+    font = `${node.guide ? "italic " : ""}400 ${node.guide ? band.titleSize + 1.5 : band.titleSize}px "Instrument Serif", Georgia, serif`;
+    lineHeight = band.titleSize * 0.94;
+    maxWidth = node.guide ? band.titleWidth + 18 : band.titleWidth;
+    measure.font = font;
+    lines = textLines(measure, node.name, maxWidth, node.guide ? 2 : 3);
+    showKind = bandName !== "small";
+  } else {
+    font = `italic 400 ${band.fragmentSize}px "Instrument Serif", Georgia, serif`;
+    lineHeight = band.fragmentSize * 1.05;
+    maxWidth = band.fragmentWidth;
+    measure.font = font;
+    lines = textLines(measure, node.fragment, maxWidth, 2);
+  }
+
+  const measuredWidth = Math.max(...lines.map((line) => measure.measureText(line).width), 1);
+  const kindHeight = showKind ? 12 : 0;
+  const paddingX = 7;
+  const paddingY = 5;
+  const width = Math.ceil(Math.min(maxWidth + 4, measuredWidth) + paddingX * 2);
+  const height = Math.ceil(lines.length * lineHeight + kindHeight + paddingY * 2);
+  const canvas = document.createElement("canvas");
+  canvas.width = Math.ceil(width * rasterScale);
+  canvas.height = Math.ceil(height * rasterScale);
+  const spriteContext = canvas.getContext("2d");
+  spriteContext.scale(rasterScale, rasterScale);
+  spriteContext.textAlign = "center";
+  spriteContext.textBaseline = "middle";
+
+  if (showKind) {
+    spriteContext.font = `400 6.5px "DM Mono", monospace`;
+    spriteContext.fillStyle = signalColor;
+    spriteContext.fillText(node.kind.toUpperCase(), width / 2, paddingY + 3.5);
+  }
+
+  spriteContext.font = font;
+  spriteContext.fillStyle = role === "fragment" ? (isLight ? "rgba(247,243,233,.72)" : "rgba(21,23,19,.66)") : titleColor;
+  const textTop = paddingY + kindHeight;
+  lines.forEach((line, lineIndex) => {
+    spriteContext.fillText(line, width / 2, textTop + lineHeight * (lineIndex + 0.5));
+  });
+
+  const sprite = { canvas, width, height };
+  labelSprites.set(key, sprite);
+  return sprite;
+}
+
+function borderRepulsion(poly, x, y, sprite) {
+  if (!pointInPoly(poly, x, y)) {
+    const center = centroid(poly);
+    const dx = center[0] - x;
+    const dy = center[1] - y;
+    const distance = Math.hypot(dx, dy) || 1;
+    return { x: (dx / distance) * 1.2, y: (dy / distance) * 1.2, pressure: 1 };
+  }
+
+  let forceX = 0;
+  let forceY = 0;
+  let pressure = 0;
+  for (let i = 0; i < poly.length; i++) {
+    const first = poly[i];
+    const second = poly[(i + 1) % poly.length];
+    const edgeX = second[0] - first[0];
+    const edgeY = second[1] - first[1];
+    const lengthSquared = edgeX * edgeX + edgeY * edgeY || 1;
+    const t = Math.max(0, Math.min(1, ((x - first[0]) * edgeX + (y - first[1]) * edgeY) / lengthSquared));
+    const nearestX = first[0] + edgeX * t;
+    const nearestY = first[1] + edgeY * t;
+    const dx = x - nearestX;
+    const dy = y - nearestY;
+    const distance = Math.hypot(dx, dy) || 0.001;
+    const normalX = dx / distance;
+    const normalY = dy / distance;
+    const requiredDistance = Math.abs(normalX) * sprite.width * 0.5 + Math.abs(normalY) * sprite.height * 0.5 + 7;
+    if (distance >= requiredDistance) continue;
+    const amount = (requiredDistance - distance) / Math.max(requiredDistance, 1);
+    const eased = amount * amount;
+    forceX += normalX * eased;
+    forceY += normalY * eased;
+    pressure = Math.max(pressure, amount);
+  }
+  return { x: forceX, y: forceY, pressure };
+}
+
+function updateFluidText(body, node, center, poly, sprite, time, targetX, targetY, motionScale = 1) {
+  if (REDUCED_MOTION) {
+    body.ox += (targetX - body.ox) * 0.2;
+    body.oy += (targetY - body.oy) * 0.2;
+    body.vx = 0;
+    body.vy = 0;
+    return { x: center[0] + body.ox, y: center[1] + body.oy, pressure: 0 };
+  }
+
+  const flowX = (Math.sin(time * 0.24 + node.phase) + Math.cos(time * 0.11 + node.phase2) * 0.42) * 3.2 * motionScale;
+  const flowY = (Math.cos(time * 0.2 + node.phase2) + Math.sin(time * 0.09 + node.phase) * 0.36) * 2.5 * motionScale;
+  const desiredX = targetX + flowX;
+  const desiredY = targetY + flowY;
+  body.vx += (desiredX - body.ox) * 0.0065 * textFrameFactor;
+  body.vy += (desiredY - body.oy) * 0.0065 * textFrameFactor;
+
+  const repulsion = borderRepulsion(poly, center[0] + body.ox, center[1] + body.oy, sprite);
+  body.vx += repulsion.x * 0.28 * textFrameFactor;
+  body.vy += repulsion.y * 0.28 * textFrameFactor;
+  const drag = Math.pow(0.91, textFrameFactor);
+  body.vx *= drag;
+  body.vy *= drag;
+  body.ox += body.vx * textFrameFactor;
+  body.oy += body.vy * textFrameFactor;
+
+  return { x: center[0] + body.ox, y: center[1] + body.oy, pressure: repulsion.pressure };
+}
+
+function drawSprite(sprite, position, alpha) {
+  ctx.globalAlpha = alpha;
+  ctx.drawImage(
+    sprite.canvas,
+    position.x - sprite.width / 2,
+    position.y - sprite.height / 2,
+    sprite.width,
+    sprite.height,
+  );
+}
+
+function drawLabel(node, index, rawCenter, centerWorld, screenRadius, lifted, poly, time) {
   const selected = index === focusId;
-  const lightText = selected || node.guide;
-  const canName = screenRadius > 30 || lifted || node.n >= 9;
-  if (!canName) {
+  const fluid = ensureTextFluid(node);
+  const settledWorld = settleTextAnchor(fluid, centerWorld);
+  const center = worldToScreen(settledWorld);
+  if (!fluid.visible && (screenRadius > 31 || lifted || (node.n >= 9 && screenRadius > 20))) fluid.visible = true;
+  if (fluid.visible && !lifted && (screenRadius < 18 || (screenRadius < 23 && node.n < 9))) fluid.visible = false;
+  if (!fluid.visible) {
+    node._textPressure = (node._textPressure || 0) * 0.92;
     ctx.beginPath();
-    ctx.arc(center[0], center[1], 2.2, 0, Math.PI * 2);
+    ctx.arc(rawCenter[0], rawCenter[1], 2.2, 0, Math.PI * 2);
     ctx.fillStyle = node.spawned ? PAL.acid : PAL.inkSoft;
     ctx.fill();
     return;
   }
 
-  ctx.textAlign = "center";
-  ctx.textBaseline = "middle";
-  ctx.globalAlpha = lifted || node.guide ? 1 : 0.74;
-  ctx.fillStyle = lightText ? "#f7f3e9" : PAL.ink;
+  const bandName = chooseLabelBand(fluid, screenRadius);
+  const variant = node.guide ? "guide" : selected ? "selected" : "normal";
+  const titleSprite = makeLabelSprite(node, bandName, variant, "title");
+  const shouldWhisper = !node.guide && ((lifted && screenRadius > 46) || (bandName === "large" && node.n >= 9));
+  const fragmentTarget = shouldWhisper ? (lifted ? 0.82 : 0.38) : 0;
+  fluid.fragmentAlpha += (fragmentTarget - fluid.fragmentAlpha) * 0.055;
+  fluid.emphasis += ((lifted || node.guide ? 1 : 0.78) - fluid.emphasis) * 0.1;
 
-  if (node.guide) {
-    ctx.font = `400 ${Math.max(7, Math.round(8 * cam.scale + 3))}px "DM Mono", monospace`;
-    ctx.fillStyle = PAL.acid;
-    ctx.fillText("VOICE GUIDE", center[0], center[1] - 14 * cam.scale);
-    ctx.font = `italic 400 ${Math.max(15, Math.round(22 * cam.scale + 4))}px "Instrument Serif", Georgia, serif`;
-    ctx.fillStyle = "#f7f3e9";
-    ctx.fillText("Ask Abacus", center[0], center[1] + 6 * cam.scale);
-    ctx.globalAlpha = 1;
-    return;
+  let fragmentSprite = null;
+  if (fluid.fragmentAlpha > 0.015 || shouldWhisper) {
+    fragmentSprite = makeLabelSprite(node, bandName, variant, "fragment");
   }
 
-  const fontSize = Math.max(11, Math.min(20, Math.round(11 + 8 * cam.scale + (node.n / MAX_N) * 2)));
-  ctx.font = `400 ${fontSize}px "Instrument Serif", Georgia, serif`;
-  const lines = textLines(node.name, screenRadius * 1.48, 3);
-  const lineHeight = fontSize * 0.94;
-  const startY = center[1] - ((lines.length - 1) * lineHeight) / 2;
-  lines.forEach((line, lineIndex) => ctx.fillText(line, center[0], startY + lineIndex * lineHeight));
+  const titleTargetY = fragmentSprite ? -Math.min(15, titleSprite.height * 0.32) * fluid.fragmentAlpha : 0;
+  const titlePosition = updateFluidText(fluid.title, node, center, poly, titleSprite, time, 0, titleTargetY, lifted ? 1.35 : 1);
+  drawSprite(titleSprite, titlePosition, fluid.emphasis);
 
-  if (screenRadius > 52 || lifted) {
-    const kindY = startY - 14;
-    ctx.font = `400 ${Math.max(6, Math.round(6 + cam.scale * 2))}px "DM Mono", monospace`;
-    ctx.fillStyle = selected ? PAL.acid : lifted ? PAL.blue : PAL.inkSoft;
-    ctx.fillText(node.kind.toUpperCase(), center[0], kindY);
+  let textPressure = titlePosition.pressure;
+  if (fragmentSprite) {
+    const fragmentTargetY = titleSprite.height * 0.42 + fragmentSprite.height * 0.5 + 5;
+    const fragmentPosition = updateFluidText(fluid.fragment, node, center, poly, fragmentSprite, time, 0, fragmentTargetY, 0.76);
+    drawSprite(fragmentSprite, fragmentPosition, fluid.fragmentAlpha);
+    textPressure = Math.max(textPressure, fragmentPosition.pressure * fluid.fragmentAlpha);
   }
+  node._textPressure = (node._textPressure || 0) + (textPressure - (node._textPressure || 0)) * 0.08;
+
   ctx.globalAlpha = 1;
 }
 
@@ -471,20 +699,20 @@ function draw(time) {
       ctx.fillStyle = PAL.ink;
       ctx.fill();
       ctx.setLineDash([]);
-      ctx.lineWidth = 3;
+      ctx.lineWidth = 3 + (node._textPressure || 0) * 0.55;
       ctx.strokeStyle = PAL.acid;
       ctx.stroke();
     } else if (index === focusId) {
       ctx.fillStyle = PAL.ink;
       ctx.fill();
       ctx.setLineDash([]);
-      ctx.lineWidth = 2.2;
+      ctx.lineWidth = 2.2 + (node._textPressure || 0) * 0.65;
       ctx.strokeStyle = PAL.blue;
       ctx.stroke();
     } else {
       ctx.fillStyle = lifted ? (PAL.kinds[node.kind] || "#ffffff") : (PAL.kinds[node.kind] || PAL.cell);
       ctx.fill();
-      ctx.lineWidth = 0.85 + node.highlight * 1.6;
+      ctx.lineWidth = 0.85 + node.highlight * 1.6 + (node._textPressure || 0) * 0.65;
       ctx.strokeStyle = node.spawned || node.highlight > 0 ? PAL.blue : PAL.stroke;
       ctx.setLineDash(node.spawned ? [4, 4] : []);
       ctx.stroke();
@@ -498,7 +726,7 @@ function draw(time) {
       ctx.fill();
     }
 
-    drawLabel(node, index, center, screenRadius, lifted);
+    drawLabel(node, index, center, centerWorld, screenRadius, lifted, screenPoly, time);
   }
   ctx.setLineDash([]);
 }
@@ -521,9 +749,11 @@ function tickCamera() {
 
 let lastFrame = 0;
 let coordinateFrame = 0;
+let textFrameFactor = 1;
 function loop(timestamp) {
-  if (!lastFrame) lastFrame = timestamp;
+  const elapsed = lastFrame ? timestamp - lastFrame : 16.67;
   lastFrame = timestamp;
+  textFrameFactor = Math.max(0.35, Math.min(2.2, elapsed / 16.67));
   const time = timestamp / 1000;
   step(time);
   tickCamera();
