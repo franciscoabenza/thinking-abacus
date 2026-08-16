@@ -277,7 +277,9 @@ function step(time) {
     let dy = second.y - first.y;
     const distance = Math.hypot(dx, dy) || 0.01;
     const target = (first._R + second._R) * 1.12;
-    const force = ((distance - target) * 0.011) / distance;
+    const displaced = first._claw || second._claw || first._semanticReturn || second._semanticReturn;
+    const semanticElasticity = displaced ? 0.035 : 1;
+    const force = (((distance - target) * 0.011) / distance) * semanticElasticity;
     dx *= force;
     dy *= force;
     first.vx += dx;
@@ -299,16 +301,40 @@ function step(time) {
         const force = ((target - distance) / distance) * 0.047;
         dx *= force;
         dy *= force;
-        first.vx -= dx;
-        first.vy -= dy;
-        second.vx += dx;
-        second.vy += dy;
+        if (!first._claw) {
+          first.vx -= dx;
+          first.vy -= dy;
+        }
+        if (!second._claw) {
+          second.vx += dx;
+          second.vy += dy;
+        }
       }
     }
   }
 
   const amplitude = REDUCED_MOTION ? 0 : 0.012 + 0.05 * CFG.motion;
   for (const node of nodes) {
+    if (node._claw) {
+      node.vx = 0;
+      node.vy = 0;
+      continue;
+    }
+
+    if (node._semanticReturn) {
+      const dx = node._semanticReturn.x - node.x;
+      const dy = node._semanticReturn.y - node.y;
+      const distance = Math.hypot(dx, dy);
+      node.vx += dx * 0.00006 + amplitude * 0.18 * Math.sin(time * 0.31 + node.phase);
+      node.vy += dy * 0.00006 + amplitude * 0.18 * Math.cos(time * 0.27 + node.phase2);
+      node.vx *= 0.94;
+      node.vy *= 0.94;
+      node.x += node.vx;
+      node.y += node.vy;
+      if (distance < 5 && Math.hypot(node.vx, node.vy) < 0.18) node._semanticReturn = null;
+      continue;
+    }
+
     const anchor = node.guide ? [WORLD.w / 2 + 70, WORLD.h / 2 + 10] : clusterFor(node.kind);
     node.vx += (anchor[0] - node.x) * 0.00018 + amplitude * Math.sin(time * 0.47 + node.phase);
     node.vy += (anchor[1] - node.y) * 0.00018 + amplitude * Math.cos(time * 0.39 + node.phase2);
@@ -325,6 +351,7 @@ function step(time) {
 let hoverId = -1;
 let focusId = -1;
 let previousFocusId = -1;
+let pointerScreen = null;
 
 function drawFieldMarks() {
   ctx.save();
@@ -361,6 +388,27 @@ function drawThreads(time) {
     ctx.lineDashOffset = REDUCED_MOTION ? 0 : -time * (isArrival ? 10 : 4);
     ctx.lineWidth = isArrival ? 2 : 1;
     ctx.strokeStyle = isArrival ? "rgba(76,92,255,0.78)" : "rgba(21,23,19,0.2)";
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
+function drawSemanticTethers(time) {
+  ctx.save();
+  ctx.lineCap = "round";
+  for (const node of nodes) {
+    if (!node._semanticReturn) continue;
+    const from = worldToScreen([node.x, node.y]);
+    const to = worldToScreen([node._semanticReturn.x, node._semanticReturn.y]);
+    const distance = Math.hypot(to[0] - from[0], to[1] - from[1]);
+    if (distance < 8) continue;
+    ctx.beginPath();
+    ctx.moveTo(from[0], from[1]);
+    ctx.lineTo(to[0], to[1]);
+    ctx.setLineDash([1.5, 8]);
+    ctx.lineDashOffset = REDUCED_MOTION ? 0 : -time * 2.5;
+    ctx.lineWidth = 1;
+    ctx.strokeStyle = `rgba(76,92,255,${Math.min(0.28, 0.08 + distance / 900)})`;
     ctx.stroke();
   }
   ctx.restore();
@@ -413,6 +461,7 @@ function ensureTextFluid(node) {
     band: null,
     visible: node.n >= 9,
     emphasis: 0.74,
+    revealAlpha: node.guide ? 1 : node.n >= 11 ? 0.42 : node.n >= 9 ? 0.16 : 0.02,
     fragmentAlpha: 0,
     anchorX: null,
     anchorY: null,
@@ -474,6 +523,33 @@ function chooseLabelBand(fluid, screenRadius) {
   else if (fluid.band === "medium" && screenRadius > 70) fluid.band = "large";
   else if (fluid.band === "large" && screenRadius < 57) fluid.band = "medium";
   return fluid.band;
+}
+
+function graphNeighborOf(index, activeIndex) {
+  if (activeIndex < 0 || index === activeIndex) return index === activeIndex;
+  return edges.some((edge) =>
+    (edge.a === index && edge.b === activeIndex) ||
+    (edge.b === index && edge.a === activeIndex));
+}
+
+function labelRevealTarget(node, index, center, lifted) {
+  if (node.guide || lifted) return 1;
+
+  // A few major ideas remain as quiet navigational beacons. The rest surface
+  // through physical proximity or an explicit semantic relationship.
+  let target = node.n >= 11 ? 0.42 : node.n >= 9 ? 0.15 : 0.018;
+  if (cam.scale > 1.2) target = Math.max(target, 0.22);
+  else if (cam.scale > 0.9) target = Math.max(target, 0.09);
+
+  if (pointerScreen) {
+    const distance = Math.hypot(center[0] - pointerScreen[0], center[1] - pointerScreen[1]);
+    const proximity = Math.max(0, Math.min(1, (285 - distance) / 225));
+    target = Math.max(target, proximity * proximity * 0.92);
+  }
+
+  if (graphNeighborOf(index, focusId)) target = Math.max(target, 0.72);
+  if (graphNeighborOf(index, hoverId)) target = Math.max(target, 0.58);
+  return target;
 }
 
 function makeLabelSprite(node, bandName, variant, role) {
@@ -540,17 +616,17 @@ function makeLabelSprite(node, bandName, variant, role) {
 }
 
 function borderRepulsion(poly, x, y, sprite) {
+  // One-way coupling: the blob boundary influences the text, never the reverse.
   if (!pointInPoly(poly, x, y)) {
     const center = centroid(poly);
     const dx = center[0] - x;
     const dy = center[1] - y;
     const distance = Math.hypot(dx, dy) || 1;
-    return { x: (dx / distance) * 1.2, y: (dy / distance) * 1.2, pressure: 1 };
+    return { x: (dx / distance) * 1.2, y: (dy / distance) * 1.2 };
   }
 
   let forceX = 0;
   let forceY = 0;
-  let pressure = 0;
   for (let i = 0; i < poly.length; i++) {
     const first = poly[i];
     const second = poly[(i + 1) % poly.length];
@@ -571,9 +647,8 @@ function borderRepulsion(poly, x, y, sprite) {
     const eased = amount * amount;
     forceX += normalX * eased;
     forceY += normalY * eased;
-    pressure = Math.max(pressure, amount);
   }
-  return { x: forceX, y: forceY, pressure };
+  return { x: forceX, y: forceY };
 }
 
 function updateFluidText(body, node, center, poly, sprite, time, targetX, targetY, motionScale = 1) {
@@ -582,7 +657,7 @@ function updateFluidText(body, node, center, poly, sprite, time, targetX, target
     body.oy += (targetY - body.oy) * 0.2;
     body.vx = 0;
     body.vy = 0;
-    return { x: center[0] + body.ox, y: center[1] + body.oy, pressure: 0 };
+    return { x: center[0] + body.ox, y: center[1] + body.oy };
   }
 
   const flowX = (Math.sin(time * 0.24 + node.phase) + Math.cos(time * 0.11 + node.phase2) * 0.42) * 3.2 * motionScale;
@@ -601,7 +676,7 @@ function updateFluidText(body, node, center, poly, sprite, time, targetX, target
   body.ox += body.vx * textFrameFactor;
   body.oy += body.vy * textFrameFactor;
 
-  return { x: center[0] + body.ox, y: center[1] + body.oy, pressure: repulsion.pressure };
+  return { x: center[0] + body.ox, y: center[1] + body.oy };
 }
 
 function drawSprite(sprite, position, alpha) {
@@ -618,12 +693,27 @@ function drawSprite(sprite, position, alpha) {
 function drawLabel(node, index, rawCenter, centerWorld, screenRadius, lifted, poly, time) {
   const selected = index === focusId;
   const fluid = ensureTextFluid(node);
-  const settledWorld = settleTextAnchor(fluid, centerWorld);
-  const center = worldToScreen(settledWorld);
+  let center;
+  if (node._claw && conceptClaw.index === index && conceptClaw.labelScreen) {
+    center = [
+      conceptClaw.labelScreen[0] + conceptClaw.labelOffsetX,
+      conceptClaw.labelScreen[1] + conceptClaw.labelOffsetY,
+    ];
+    const fixedWorld = screenToWorld(center[0], center[1]);
+    fluid.anchorX = fixedWorld[0];
+    fluid.anchorY = fixedWorld[1];
+    fluid.anchorVx = 0;
+    fluid.anchorVy = 0;
+  } else {
+    const settledWorld = settleTextAnchor(fluid, centerWorld);
+    center = worldToScreen(settledWorld);
+  }
+  const revealTarget = labelRevealTarget(node, index, center, lifted);
+  const revealEase = 1 - Math.pow(0.91, textFrameFactor);
+  fluid.revealAlpha += (revealTarget - fluid.revealAlpha) * revealEase;
   if (!fluid.visible && (screenRadius > 31 || lifted || (node.n >= 9 && screenRadius > 20))) fluid.visible = true;
   if (fluid.visible && !lifted && (screenRadius < 18 || (screenRadius < 23 && node.n < 9))) fluid.visible = false;
   if (!fluid.visible) {
-    node._textPressure = (node._textPressure || 0) * 0.92;
     ctx.beginPath();
     ctx.arc(rawCenter[0], rawCenter[1], 2.2, 0, Math.PI * 2);
     ctx.fillStyle = node.spawned ? PAL.acid : PAL.inkSoft;
@@ -646,16 +736,13 @@ function drawLabel(node, index, rawCenter, centerWorld, screenRadius, lifted, po
 
   const titleTargetY = fragmentSprite ? -Math.min(15, titleSprite.height * 0.32) * fluid.fragmentAlpha : 0;
   const titlePosition = updateFluidText(fluid.title, node, center, poly, titleSprite, time, 0, titleTargetY, lifted ? 1.35 : 1);
-  drawSprite(titleSprite, titlePosition, fluid.emphasis);
+  drawSprite(titleSprite, titlePosition, fluid.emphasis * fluid.revealAlpha);
 
-  let textPressure = titlePosition.pressure;
   if (fragmentSprite) {
     const fragmentTargetY = titleSprite.height * 0.42 + fragmentSprite.height * 0.5 + 5;
     const fragmentPosition = updateFluidText(fluid.fragment, node, center, poly, fragmentSprite, time, 0, fragmentTargetY, 0.76);
-    drawSprite(fragmentSprite, fragmentPosition, fluid.fragmentAlpha);
-    textPressure = Math.max(textPressure, fragmentPosition.pressure * fluid.fragmentAlpha);
+    drawSprite(fragmentSprite, fragmentPosition, fluid.fragmentAlpha * fluid.revealAlpha);
   }
-  node._textPressure = (node._textPressure || 0) + (textPressure - (node._textPressure || 0)) * 0.08;
 
   ctx.globalAlpha = 1;
 }
@@ -665,6 +752,7 @@ function draw(time) {
   ctx.fillRect(0, 0, VW, VH);
   drawFieldMarks();
   drawThreads(time);
+  drawSemanticTethers(time);
 
   const order = nodes
     .map((node, index) => index)
@@ -699,20 +787,20 @@ function draw(time) {
       ctx.fillStyle = PAL.ink;
       ctx.fill();
       ctx.setLineDash([]);
-      ctx.lineWidth = 3 + (node._textPressure || 0) * 0.55;
+      ctx.lineWidth = 3;
       ctx.strokeStyle = PAL.acid;
       ctx.stroke();
     } else if (index === focusId) {
       ctx.fillStyle = PAL.ink;
       ctx.fill();
       ctx.setLineDash([]);
-      ctx.lineWidth = 2.2 + (node._textPressure || 0) * 0.65;
+      ctx.lineWidth = 2.2;
       ctx.strokeStyle = PAL.blue;
       ctx.stroke();
     } else {
       ctx.fillStyle = lifted ? (PAL.kinds[node.kind] || "#ffffff") : (PAL.kinds[node.kind] || PAL.cell);
       ctx.fill();
-      ctx.lineWidth = 0.85 + node.highlight * 1.6 + (node._textPressure || 0) * 0.65;
+      ctx.lineWidth = 0.85 + node.highlight * 1.6;
       ctx.strokeStyle = node.spawned || node.highlight > 0 ? PAL.blue : PAL.stroke;
       ctx.setLineDash(node.spawned ? [4, 4] : []);
       ctx.stroke();
@@ -740,11 +828,135 @@ function updateCoordinates() {
   document.getElementById("coordinates").textContent = `${latitude.toFixed(2)}° N · ${longitude.toFixed(2)}° W`;
 }
 
+const cameraMomentum = { x: 0, y: 0 };
+let cameraIsDragging = false;
+let lastDragInputTime = 0;
+
+function cancelCameraMomentum() {
+  cameraMomentum.x = 0;
+  cameraMomentum.y = 0;
+}
+
 function tickCamera() {
   const ease = REDUCED_MOTION ? 1 : 0.075;
-  cam.x += (cam.tx - cam.x) * ease;
-  cam.y += (cam.ty - cam.y) * ease;
+  if (cameraIsDragging) {
+    // Pointer samples may stop briefly before pointerup. Bleed that stale
+    // velocity away so it cannot discharge as a jump on release.
+    if (performance.now() - lastDragInputTime > 24) {
+      const restingDrag = Math.pow(0.78, textFrameFactor);
+      cameraMomentum.x *= restingDrag;
+      cameraMomentum.y *= restingDrag;
+    }
+  }
+
+  const momentumSpeed = Math.hypot(cameraMomentum.x, cameraMomentum.y);
+  if (!cameraIsDragging && !REDUCED_MOTION && momentumSpeed > 0.012) {
+    // A slow render frame should dissipate energy, not catch the camera up in
+    // one large positional step. This keeps the release visually continuous.
+    const motionFactor = Math.min(1.25, textFrameFactor);
+    cam.x += cameraMomentum.x * motionFactor;
+    cam.y += cameraMomentum.y * motionFactor;
+    cam.tx = cam.x;
+    cam.ty = cam.y;
+    const waterDrag = Math.pow(0.94, textFrameFactor);
+    cameraMomentum.x *= waterDrag;
+    cameraMomentum.y *= waterDrag;
+  } else {
+    if (momentumSpeed <= 0.012 || REDUCED_MOTION) cancelCameraMomentum();
+    cam.x += (cam.tx - cam.x) * ease;
+    cam.y += (cam.ty - cam.y) * ease;
+  }
   cam.scale += (cam.ts - cam.scale) * ease;
+}
+
+const conceptClaw = {
+  index: -1,
+  engaged: false,
+  screen: null,
+  labelScreen: null,
+  labelOffsetX: 0,
+  labelOffsetY: 0,
+  labelVx: 0,
+  labelVy: 0,
+  home: null,
+};
+
+function stirClawedText(dx, dy) {
+  if (!conceptClaw.engaged) return;
+  const distance = Math.hypot(dx, dy) || 1;
+  const capped = Math.min(1, 18 / distance);
+  conceptClaw.labelVx += dx * 0.065 * capped;
+  conceptClaw.labelVy += dy * 0.065 * capped;
+}
+
+function dampClawedText() {
+  if (!conceptClaw.engaged) return;
+  if (REDUCED_MOTION) {
+    conceptClaw.labelOffsetX = 0;
+    conceptClaw.labelOffsetY = 0;
+    conceptClaw.labelVx = 0;
+    conceptClaw.labelVy = 0;
+    return;
+  }
+  const spring = 0.018 * textFrameFactor;
+  conceptClaw.labelVx -= conceptClaw.labelOffsetX * spring;
+  conceptClaw.labelVy -= conceptClaw.labelOffsetY * spring;
+  const damping = Math.pow(0.84, textFrameFactor);
+  conceptClaw.labelVx *= damping;
+  conceptClaw.labelVy *= damping;
+  conceptClaw.labelOffsetX += conceptClaw.labelVx * textFrameFactor;
+  conceptClaw.labelOffsetY += conceptClaw.labelVy * textFrameFactor;
+
+  const distance = Math.hypot(conceptClaw.labelOffsetX, conceptClaw.labelOffsetY);
+  const limit = 20;
+  if (distance > limit) {
+    conceptClaw.labelOffsetX = (conceptClaw.labelOffsetX / distance) * limit;
+    conceptClaw.labelOffsetY = (conceptClaw.labelOffsetY / distance) * limit;
+  }
+}
+
+function applyConceptClaw(advanceText = true) {
+  if (!conceptClaw.engaged || conceptClaw.index < 0 || !conceptClaw.screen) return;
+  const node = nodes[conceptClaw.index];
+  if (!node) return;
+  const pinnedWorld = screenToWorld(conceptClaw.screen[0], conceptClaw.screen[1]);
+  node.x = pinnedWorld[0];
+  node.y = pinnedWorld[1];
+  node.vx = 0;
+  node.vy = 0;
+  if (advanceText) dampClawedText();
+}
+
+function releaseConceptClaw() {
+  if (conceptClaw.index >= 0) {
+    const node = nodes[conceptClaw.index];
+    if (node) {
+      if (conceptClaw.labelScreen) {
+        const fluid = ensureTextFluid(node);
+        const releasedWorld = screenToWorld(
+          conceptClaw.labelScreen[0] + conceptClaw.labelOffsetX,
+          conceptClaw.labelScreen[1] + conceptClaw.labelOffsetY,
+        );
+        fluid.anchorX = releasedWorld[0];
+        fluid.anchorY = releasedWorld[1];
+        fluid.anchorVx = 0;
+        fluid.anchorVy = 0;
+      }
+      node._claw = false;
+      if (conceptClaw.engaged && conceptClaw.home) {
+        node._semanticReturn = { x: conceptClaw.home[0], y: conceptClaw.home[1] };
+      }
+    }
+  }
+  conceptClaw.index = -1;
+  conceptClaw.engaged = false;
+  conceptClaw.screen = null;
+  conceptClaw.labelScreen = null;
+  conceptClaw.labelOffsetX = 0;
+  conceptClaw.labelOffsetY = 0;
+  conceptClaw.labelVx = 0;
+  conceptClaw.labelVy = 0;
+  conceptClaw.home = null;
 }
 
 let lastFrame = 0;
@@ -757,12 +969,14 @@ function loop(timestamp) {
   const time = timestamp / 1000;
   step(time);
   tickCamera();
+  applyConceptClaw();
   draw(time);
   if (coordinateFrame++ % 18 === 0) updateCoordinates();
   requestAnimationFrame(loop);
 }
 
 function recenter() {
+  cancelCameraMomentum();
   let minX = Infinity;
   let minY = Infinity;
   let maxX = -Infinity;
@@ -884,6 +1098,7 @@ function focusNode(index, options = {}) {
   }
 
   dismissWelcome();
+  cancelCameraMomentum();
   previousFocusId = focusId;
   focusId = index;
   node.highlight = 1;
@@ -1009,6 +1224,9 @@ function closeSearch() {
 let pointerDown = false;
 let pointerMoved = false;
 let lastPosition = null;
+let pointerOrigin = null;
+let lastPointerTime = 0;
+let activePointerId = null;
 
 function localPosition(event) {
   const rect = cv.getBoundingClientRect();
@@ -1024,50 +1242,155 @@ function pickAt(x, y) {
 }
 
 cv.addEventListener("pointerdown", (event) => {
+  if (pointerDown) return;
+  event.preventDefault();
   pointerDown = true;
   pointerMoved = false;
   lastPosition = localPosition(event);
+  pointerOrigin = [...lastPosition];
+  pointerScreen = lastPosition;
+  lastPointerTime = event.timeStamp;
+  lastDragInputTime = performance.now();
+  activePointerId = event.pointerId;
+  cameraIsDragging = true;
+  cancelCameraMomentum();
+
+  const hit = pickAt(lastPosition[0], lastPosition[1]);
+  if (hit >= 0 && !nodes[hit].guide) {
+    const node = nodes[hit];
+    conceptClaw.index = hit;
+    // Moor the concept where it already is, not at the exact contact point.
+    // Otherwise pressing near a cell edge would teleport its generator before
+    // the first drag frame and visibly disturb both geometry and text.
+    conceptClaw.screen = worldToScreen([node.x, node.y]);
+    conceptClaw.home = node._semanticReturn
+      ? [node._semanticReturn.x, node._semanticReturn.y]
+      : [node.x, node.y];
+    node._semanticReturn = null;
+  } else {
+    releaseConceptClaw();
+  }
+
   cv.setPointerCapture(event.pointerId);
   cv.classList.add("dragging");
 });
 
 cv.addEventListener("pointermove", (event) => {
   const position = localPosition(event);
+  pointerScreen = position;
   if (pointerDown) {
+    if (event.pointerId !== activePointerId) return;
+    if (event.pointerType !== "touch" && event.buttons === 0) {
+      finishPointer(event);
+      return;
+    }
     const dx = position[0] - lastPosition[0];
     const dy = position[1] - lastPosition[1];
-    if (Math.abs(dx) + Math.abs(dy) > 3) pointerMoved = true;
-    cam.x -= dx / cam.scale;
+    const gestureDistance = Math.hypot(dx, dy);
+    const totalGestureDistance = pointerOrigin ? Math.hypot(position[0] - pointerOrigin[0], position[1] - pointerOrigin[1]) : gestureDistance;
+    if (totalGestureDistance > 5 && !pointerMoved) {
+      pointerMoved = true;
+      if (conceptClaw.index >= 0) {
+        conceptClaw.engaged = true;
+        const node = nodes[conceptClaw.index];
+        const fluid = ensureTextFluid(node);
+        conceptClaw.labelScreen = fluid.anchorX == null
+          ? worldToScreen([node.x, node.y])
+          : worldToScreen([fluid.anchorX, fluid.anchorY]);
+        conceptClaw.labelOffsetX = 0;
+        conceptClaw.labelOffsetY = 0;
+        conceptClaw.labelVx = 0;
+        conceptClaw.labelVy = 0;
+        node._claw = true;
+      }
+    }
+
+    const resistance = 0.56 + Math.min(0.12, (gestureDistance / 24) * 0.12);
+    const panX = -(dx / cam.scale) * resistance;
+    const panY = -(dy / cam.scale) * resistance;
+    stirClawedText(dx * resistance, dy * resistance);
+    cam.x += panX;
     cam.tx = cam.x;
-    cam.y -= dy / cam.scale;
+    cam.y += panY;
     cam.ty = cam.y;
+
+    const elapsed = Math.max(6, Math.min(42, event.timeStamp - lastPointerTime || 16.67));
+    const frameVelocityX = panX * (16.67 / elapsed);
+    const frameVelocityY = panY * (16.67 / elapsed);
+    cameraMomentum.x = cameraMomentum.x * 0.48 + frameVelocityX * 0.52;
+    cameraMomentum.y = cameraMomentum.y * 0.48 + frameVelocityY * 0.52;
+    const momentumSpeed = Math.hypot(cameraMomentum.x, cameraMomentum.y);
+    const maxMomentum = 24 / Math.max(cam.scale, 0.35);
+    if (momentumSpeed > maxMomentum) {
+      cameraMomentum.x = (cameraMomentum.x / momentumSpeed) * maxMomentum;
+      cameraMomentum.y = (cameraMomentum.y / momentumSpeed) * maxMomentum;
+    }
+
     lastPosition = position;
+    lastPointerTime = event.timeStamp;
+    lastDragInputTime = performance.now();
   } else {
     hoverId = pickAt(position[0], position[1]);
     cv.style.cursor = hoverId >= 0 ? "pointer" : "grab";
   }
 });
 
-cv.addEventListener("pointerup", (event) => {
+function finishPointer(event = null, cancelled = false) {
+  if (!pointerDown) return;
+  if (event?.pointerId != null && activePointerId != null && event.pointerId !== activePointerId) return;
+  const position = event && Number.isFinite(event.clientX) && event.type !== "lostpointercapture"
+    ? localPosition(event)
+    : lastPosition || pointerScreen || [VW / 2, VH / 2];
+  pointerScreen = position;
+  if (conceptClaw.engaged) applyConceptClaw(false);
+
+  const idleBeforeRelease = Math.max(0, performance.now() - lastDragInputTime - 20);
+  if (idleBeforeRelease > 0) {
+    const retention = Math.exp(-idleBeforeRelease / 55);
+    cameraMomentum.x *= retention;
+    cameraMomentum.y *= retention;
+  }
+
+  const releasedPointerId = activePointerId;
   pointerDown = false;
+  cameraIsDragging = false;
+  activePointerId = null;
+  pointerOrigin = null;
+  if (!pointerMoved || cancelled) cancelCameraMomentum();
   cv.classList.remove("dragging");
-  if (!pointerMoved) {
-    const position = localPosition(event);
+  if (releasedPointerId != null && cv.hasPointerCapture(releasedPointerId)) {
+    cv.releasePointerCapture(releasedPointerId);
+  }
+  if (!pointerMoved && !cancelled) {
     const hit = pickAt(position[0], position[1]);
+    releaseConceptClaw();
     if (hit >= 0) focusNode(hit);
   } else {
+    releaseConceptClaw();
     dismissWelcome();
   }
+}
+
+window.addEventListener("pointerup", (event) => finishPointer(event));
+window.addEventListener("pointercancel", (event) => finishPointer(event, true));
+cv.addEventListener("lostpointercapture", (event) => finishPointer(event, true));
+window.addEventListener("blur", () => finishPointer(null, true));
+document.addEventListener("visibilitychange", () => {
+  if (document.hidden) finishPointer(null, true);
 });
 
 cv.addEventListener("pointerleave", () => {
   hoverId = -1;
-  if (!pointerDown) cv.style.cursor = "grab";
+  if (!pointerDown) {
+    pointerScreen = null;
+    cv.style.cursor = "grab";
+  }
 });
 
 cv.addEventListener("wheel", (event) => {
   event.preventDefault();
   dismissWelcome();
+  cancelCameraMomentum();
   const position = localPosition(event);
   const before = screenToWorld(position[0], position[1]);
   cam.ts = Math.max(0.34, Math.min(2.35, cam.ts * (event.deltaY < 0 ? 1.11 : 0.9)));
