@@ -19,8 +19,11 @@ npm start
 
 Open http://127.0.0.1:5174
 
-- **Drag** to roam, **scroll** to burrow, and **click** a cell to open its fragment,
-  source note, live question, and related thoughts.
+- **Drag** to paddle through the field with resistance and momentum. Begin the
+  drag on a thought to moor that lily pad while the territory moves beneath it;
+  after release, it slowly returns to its semantic home.
+- **Scroll** to burrow, and **click** a cell to open its fragment, source note,
+  live question, and related thoughts.
 - Use **Surprise me** (or press `D`) to enter somewhere unexpected.
 - Use **Find a thought** (or press `/`) to search across titles, fragments,
   questions, and themes instead of folder names.
