@@ -148,25 +148,32 @@ Goal: the black guide cell stops being a fixed centre. It becomes a fluid
 that is pulled by the semantic field and, when nothing is in context,
 collapses back into its own form. This should tickle the senses.
 
-- [ ] Read two or three ferrofluid papers (Rosensweig instability, spike
-      formation under a normal field, viscosity vs. magnetisation) and pick
-      the two or three parameters that matter for the *illusion*: viscosity,
-      self-attraction (surface tension), and field strength.
-- [ ] Semantics as magnetism: the Phase 2 charge field is the external field.
-      The fluid flows toward charged thoughts, spikes where several are
-      nearly equal, and slumps back when the field is quiet.
-- [ ] Collapse mode is a parameter: "concentrated" (one cookie, as today) ↔
-      "distributed" (spread along the field). Both are valid; Abacus may sit
-      as a form when there is nothing in context.
-- [ ] Implementation candidates: metaballs over a particle set in 2D canvas
-      (cheapest, reads as gooey); marching squares over a scalar field;
-      SPH-lite if the particle count stays under a few hundred.
-- [ ] Interaction: tapping the fluid still starts/stops the conversation.
+Pulled forward on 2026-09-13 at Fran's request — "bring the whole idea of
+magnetism to life" — before Phase 3.
 
-Test: mention two thoughts in one sentence and watch the fluid stretch
-between them; go quiet and watch it pool.
-
----
+- [x] **Magnetism between ideas.** Alive thoughts attract one another hard
+      enough to visibly reshape the tessellation; the existing separation
+      pass keeps cells from overlapping, so the Voronoi rules hold.
+- [x] **The fluid.** `web/ferrofluid.js`: 36 particles with cohesion,
+      volume, viscosity, a home spring to the guide's cell, and a magnetic
+      pull from every alive thought (1/(1+(d/420)²), scaled by its charge).
+      Quiet: a 43-unit blob inside the 66-unit cell. One strong pole: the
+      mass moves ~100 units toward it, nearest particles further. Two
+      opposed poles: it stretches between them. Rendered as metaballs by
+      marching squares (no canvas filters — iOS-safe), ink with an acid rim,
+      drawn under the guide cell so tendrils cross neighbours.
+- [x] **The cell follows its mass.** The guide's generator is pulled toward
+      the fluid's centroid, so the black form migrates toward a sustained
+      conversation and returns to the centre when it goes quiet.
+- [x] **The blue stroke steps back** to a whisper; motion is the signal.
+- [ ] **Rosensweig spikes.** Under a strong field, real ferrofluid corrugates
+      into spikes along the field direction. A cheap version: modulate the
+      metaball threshold with a field-aligned ripple; do it if the smooth
+      blob feels too tame.
+- [ ] **Concentrated ↔ distributed as a parameter** (cohesion and home
+      strength); a "mood" the backend could set.
+- [ ] **Tune from a real device.** The harness cannot show motion; Fran
+      judges reach, speed and gooeyness on the phone.
 
 ## Phase 5 — Using it is improving it
 

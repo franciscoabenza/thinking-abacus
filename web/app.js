@@ -2,6 +2,7 @@ import { CONCEPTS, LINKS } from "./concepts.js";
 import { installVoice } from "./voice/index.js";
 import { createSalience } from "./salience.js";
 import { createWave } from "./wave/wave.js";
+import { createFerrofluid } from "./ferrofluid.js";
 
 // ---------------------------------------------------------------------------
 // A living field, not a folder tree.
@@ -77,6 +78,7 @@ const MAX_N = 14;
 let nodes = [];
 let edges = [];
 const salience = createSalience();
+const fluid = createFerrofluid();
 // What a thought is *about*, for the embedder. Name first: it carries the most.
 const thoughtText = (index) => {
   const node = nodes[index];
@@ -345,9 +347,11 @@ function step(time) {
       let dx = second.x - first.x;
       let dy = second.y - first.y;
       const distance = Math.hypot(dx, dy) || 0.01;
-      const rest = (first._R + second._R) * 1.3;
+      const rest = (first._R + second._R) * 1.2;
       if (distance <= rest) continue;
-      const pull = Math.min(0.02, (distance - rest) * 0.00009) * alive[i].value * alive[j].value;
+      // Strong enough to visibly reshape the tessellation; the separation
+      // pass below still refuses to let two cells overlap.
+      const pull = Math.min(0.05, (distance - rest) * 0.00024) * alive[i].value * alive[j].value;
       dx *= pull / distance;
       dy *= pull / distance;
       first.vx += dx * 8;
@@ -355,6 +359,20 @@ function step(time) {
       second.vx -= dx * 8;
       second.vy -= dy * 8;
     }
+  }
+
+  // The ferrofluid: poles are the alive thoughts; home is the guide's cell.
+  const guideNode = nodes.find((node) => node.guide);
+  if (guideNode) {
+    fluid.step(
+      { x: guideNode.x, y: guideNode.y },
+      alive.map(({ index, value }) => ({ x: nodes[index].x, y: nodes[index].y, strength: value, radius: nodes[index]._R })),
+      textFrameFactor,
+    );
+    // The cell follows its own mass, slowly, so the black form migrates
+    // toward the conversation while the tessellation keeps its rules.
+    guideNode.vx += (fluid.centre.x - guideNode.x) * 0.0009;
+    guideNode.vy += (fluid.centre.y - guideNode.y) * 0.0009;
   }
 
   const amplitude = REDUCED_MOTION ? 0 : 0.012 + 0.05 * CFG.motion;
@@ -839,6 +857,15 @@ function draw(time) {
     const center = worldToScreen(centerWorld);
     const screenRadius = node._R * cam.scale;
 
+    if (node.guide) {
+      // The guide's cell is drawn last; its fluid goes just beneath it, over
+      // everything else, so tendrils reach across neighbours.
+      fluid.draw(ctx, worldToScreen, cam.scale, {
+        fill: "rgba(21,23,19,0.94)",
+        rim: PAL.acid,
+        stepPx: isPhone() ? 7 : 5,
+      });
+    }
     roundPath(screenPoly, CFG.round);
     if (node.guide) {
       ctx.fillStyle = PAL.ink;
@@ -857,8 +884,9 @@ function draw(time) {
     } else {
       ctx.fillStyle = lifted ? (PAL.kinds[node.kind] || "#ffffff") : (PAL.kinds[node.kind] || PAL.cell);
       ctx.fill();
-      ctx.lineWidth = 0.85 + alive * 1.7;
-      ctx.strokeStyle = node.spawned ? PAL.blue : alive > 0.06 ? `rgba(76,92,255,${Math.min(1, 0.25 + alive).toFixed(3)})` : PAL.stroke;
+      // A whisper of blue; the physics carries the signal now.
+      ctx.lineWidth = 0.85 + alive * 0.6;
+      ctx.strokeStyle = node.spawned ? PAL.blue : alive > 0.1 ? `rgba(76,92,255,${Math.min(0.5, 0.12 + alive * 0.4).toFixed(3)})` : PAL.stroke;
       ctx.setLineDash(node.spawned ? [4, 4] : []);
       ctx.stroke();
     }
@@ -1720,7 +1748,7 @@ voice = installVoice({
 });
 // ?debug exposes the same port the voice layer uses, so a tool can be tried
 // from the console without spending a voice session on it.
-if (new URLSearchParams(location.search).has("debug")) window.abacus = { tools: atlasTools, read: readView, salience, wave };
+if (new URLSearchParams(location.search).has("debug")) window.abacus = { tools: atlasTools, read: readView, salience, wave, fluid, get nodes() { return nodes; } };
 
 // ---------------------------------------------------------------------------
 // Boot.

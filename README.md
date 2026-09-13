@@ -73,6 +73,15 @@ pull between them, and a camera that drifts toward the conversation.
 `?debug` exposes `abacus.wave.say("…")` so the field can be driven from the
 console without a voice session.
 
+### The ferrofluid
+
+The black guide cell is a fluid (`web/ferrofluid.js`): particles held by
+cohesion and volume, damped by viscosity, homed to the cell, and pulled by
+every alive thought. Under a strong field it reaches out and stretches
+between ideas; quiet, it collapses back into its form. Alive thoughts also
+pull on one another, reshaping the tessellation without ever overlapping.
+The surface is marching-squares metaballs, so it needs no canvas filters.
+
 ### Traces
 
 Every conversation is written to `traces/<day>/<trace>.jsonl`: both speakers' words with timestamps, tool calls and results, what the guide was told was on screen, presence, errors, and feedback notes. `npm run trace` replays the latest session as a timeline; `npm run trace -- --list` and `-- --feedback` do what they say. The folder is git-ignored.
@@ -89,6 +98,7 @@ Each file has a small interface and hides a lot behind it.
 | `web/voice/agent.js` | `abacusSession()` | Abacus's identity — the split between the voice prompt and the backend prompt, and the tool schemas. **Imported by both `server.js` and the browser**, so there is one definition |
 | `web/voice/narrator.js` | `createNarrator()` | turning atlas state into concise context updates, debounced and deduped |
 | `web/voice/panel.js` | `createVoicePanel()` | every element id, and the words used for each state |
+| `web/ferrofluid.js` | `createFerrofluid()` | the guide as a fluid: particle physics, the scalar field, marching-squares contouring |
 | `web/salience.js` | `createSalience()` | how alive each thought is: eased, decaying, pinned by reading, energised by the wave |
 | `web/wave/wave.js` | `createWave()` | phrases → embeddings → charge; the worker, the queue, the sharpening, the failure mode |
 | `web/voice/trace.js` | `createTrace()` | a pure timestamped log of one conversation, batched to the server |
