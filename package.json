@@ -6,7 +6,7 @@
   "description": "A navigable territory of Fran's concepts, guided (and grown) by a GPT-Live voice agent.",
   "scripts": {
     "start": "node --env-file-if-exists=.env server.js",
-    "check": "node --check server.js && node --check web/app.js && node --check web/concepts.js && for f in web/voice/*.js; do node --check \"$f\" || exit 1; done && node --check scripts/trace-timeline.js",
+    "check": "node --check server.js && node --check web/app.js && node --check web/concepts.js && node --check web/salience.js && for f in web/voice/*.js web/wave/*.js; do node --check \"$f\" || exit 1; done && node --check scripts/trace-timeline.js",
     "trace": "node scripts/trace-timeline.js"
   },
   "engines": {

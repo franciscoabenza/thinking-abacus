@@ -59,6 +59,20 @@ atlas:
 screen into the model's context whenever the view changes, so Abacus already
 knows where you are and "that one" resolves without a round trip.
 
+### The live wave
+
+What is being said becomes a field over the territory. Transcript fragments
+are joined into phrases (`web/wave/phrases.js`), embedded in a Web Worker
+(`web/wave/embedder.js`, `all-MiniLM-L6-v2` on WASM — private, free, ~5 ms a
+phrase), compared with every thought, and the thoughts a phrase resembles are
+charged (`web/wave/wave.js` → `salience.energize`). Charge builds with
+repetition and fades with a 22 s half-life; the render reads it for growth,
+stroke, label and fragment reveal, threads between alive thoughts, a gentle
+pull between them, and a camera that drifts toward the conversation.
+
+`?debug` exposes `abacus.wave.say("…")` so the field can be driven from the
+console without a voice session.
+
 ### Traces
 
 Every conversation is written to `traces/<day>/<trace>.jsonl`: both speakers' words with timestamps, tool calls and results, what the guide was told was on screen, presence, errors, and feedback notes. `npm run trace` replays the latest session as a timeline; `npm run trace -- --list` and `-- --feedback` do what they say. The folder is git-ignored.
@@ -75,6 +89,8 @@ Each file has a small interface and hides a lot behind it.
 | `web/voice/agent.js` | `abacusSession()` | Abacus's identity — the split between the voice prompt and the backend prompt, and the tool schemas. **Imported by both `server.js` and the browser**, so there is one definition |
 | `web/voice/narrator.js` | `createNarrator()` | turning atlas state into concise context updates, debounced and deduped |
 | `web/voice/panel.js` | `createVoicePanel()` | every element id, and the words used for each state |
+| `web/salience.js` | `createSalience()` | how alive each thought is: eased, decaying, pinned by reading, energised by the wave |
+| `web/wave/wave.js` | `createWave()` | phrases → embeddings → charge; the worker, the queue, the sharpening, the failure mode |
 | `web/voice/trace.js` | `createTrace()` | a pure timestamped log of one conversation, batched to the server |
 | `web/voice/index.js` | `installVoice(atlas)` | nothing — it is only wiring, and stays that way |
 

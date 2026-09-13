@@ -44,6 +44,8 @@ function accessKey() {
  * @param {Record<string, (args: object) => unknown>} atlas.tools  One handler per declared tool.
  * @param {() => object} atlas.read                                Current view, for the narrator.
  * @param {() => void} [atlas.onOpen]                              The map is about to be spoken to.
+ * @param {(fragment: object) => void} [atlas.hear]                Every transcript fragment, both speakers.
+ * @param {() => void} [atlas.onClose]                             The conversation has ended.
  */
 export function installVoice(atlas, { endpoint = "/session" } = {}) {
   // The schemas the backend is given and the handlers the browser runs are
@@ -100,7 +102,11 @@ export function installVoice(atlas, { endpoint = "/session" } = {}) {
       trace?.note("presence", presence);
       panel.show(presence);
     },
-    onTranscript: ({ who, text, startMs, endMs }) => trace?.note("transcript", { who, text, start_ms: startMs, end_ms: endMs }),
+    onTranscript: (fragment) => {
+      const { who, text, startMs, endMs } = fragment;
+      trace?.note("transcript", { who, text, start_ms: startMs, end_ms: endMs });
+      atlas.hear?.(fragment);
+    },
     onAudio: (stream) => panel.play(stream),
     onError: (error) => {
       trace?.note("error", error);
@@ -110,6 +116,7 @@ export function installVoice(atlas, { endpoint = "/session" } = {}) {
       narrator.stop();
       panel.reset();
       muted = false;
+      atlas.onClose?.();
       trace?.end({ reason, seconds, confirmed });
       trace = null;
       console.info(`[voice] session ended (${reason})`, confirmed ? `${seconds ?? "?"}s` : "usage unconfirmed");
@@ -156,6 +163,8 @@ export function installVoice(atlas, { endpoint = "/session" } = {}) {
 
   return {
     toggle,
+    /** Put something the atlas noticed into the current session's trace. */
+    trace: (kind, data) => trace?.note(kind, data),
     /** The visitor moved the map themselves; tell the guide where they are. */
     viewChanged: () => {
       trace?.note("view", atlas.read());

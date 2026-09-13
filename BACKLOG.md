@@ -71,30 +71,34 @@ between thoughts is contextual — magnetism, not gravity. This is the
 foundation for text fade (2c), ferrofluid (Phase 4), and the embedding half of
 multi-selection.
 
-- [ ] **2a. Transcript chunking.** A third thread (Web Worker) consumes
-      `session.input_transcript.delta` and `session.output_transcript.delta`,
-      groups fragments into phrases using `start_ms`/`end_ms` gaps, and emits
-      phrases with timestamps. Both speakers count; the user's words weigh
-      more.
-- [ ] **2b. Embeddings.** Decide: browser-local (transformers.js / ONNX, small
-      model, private, free, ~50–100 ms per phrase) versus API embeddings
-      (better, costs, leaves the machine). Start browser-local; it keeps the
-      vault private, which the old backlog already required. Pre-embed every
-      thought's title + fragment + note + question + tags at boot (or at build)
-      and cache.
-- [ ] **2c. Physics-based accumulation.** Each thought carries a charge that
-      rises with similarity to recent phrases and decays with time — a leaky
-      integrator, so a mention lingers, repetition builds, silence lets it
-      fade. This charge *is* the salience from Phase 1, once both exist.
-- [ ] **2d. Contextual pull.** The force sim reads charge: charged thoughts
-      attract each other and the visitor's attention; the field between them
-      is what the ferrofluid will later flow along.
-- [ ] **2e. Text fade by proximity.** A thought's text reveals in proportion
-      to its charge: title always, fragment when warm, note when hot. The
-      "don't show all the text at once" idea.
-- [ ] **2f. Threshold multi-selection.** Thoughts above a charge threshold are
-      attended automatically — the embedding half of "two in tandem" with the
-      backend's `attend`.
+- [x] **2a. Transcript chunking.** `web/wave/phrases.js` joins fragments per
+      speaker until a session-clock gap, a sentence end, or 18 words; a
+      wall-clock timer flushes what silence leaves. Both speakers count.
+- [x] **2b. Embeddings.** Browser-local, in a Web Worker: `all-MiniLM-L6-v2`
+      (q8, WASM) — 1.8 s to load, ~5 ms per phrase, ~23 MB cached after the
+      first visit. Chosen over EmbeddingGemma-300m on WebGPU, which was 30×
+      slower and scored "hello" as close to "memory" as a real thought.
+      Every thought is embedded at boot; new growth on spawn. The model is
+      one string in `embedder.worker.js`.
+- [x] **2c. Physics-based accumulation.** `salience.energize` adds charge;
+      the field's 22 s half-life lets it fade. Verified with a fake clock:
+      one phrase ≈ 0.3, three ≈ 0.75, half again after 22 s. Similarity is
+      sharpened (floor 0.2, ceil 0.55, power 1.6), a phrase's energy is shared
+      across its best four matches, and the visitor's words weigh ~2× the
+      guide's.
+- [x] **2d. Contextual pull.** In `step()`, alive thoughts attract one
+      another, bounded by their rest distance; the camera drifts toward the
+      alive centroid when nobody is reading or dragging.
+- [x] **2e. Text fade by proximity.** Title reveal follows salience; the
+      fragment whispers in once a thought is warm (> 0.4). "Note when hot"
+      waits for the open-cookie canvas in Phase 3.
+- [x] **2f. Threshold multi-selection.** Anything alive is attended by the
+      field itself, and the narrator tells the guide what is alive — the
+      embedding half of "two in tandem" with the backend's `attend`.
+- [ ] **Tune from traces.** Every phrase and where its energy went is in the
+      session trace (`wave` lines). Adjust floor/ceil/gain and the half-life
+      from real conversations, and decide whether Abacus's own words should
+      count at all.
 - [ ] **Semantic proximity engine (from the earlier backlog, kept intact):**
       ingest selected vault notes locally with provenance; embed titles,
       fragments, questions, tags, and bodies separately; combine vector

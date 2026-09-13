@@ -37,6 +37,25 @@ export function createSalience(options = {}) {
     raise(index, amount = 0.7) {
       target.set(index, Math.max(target.get(index) ?? 0, Math.min(1, amount)));
     },
+    /**
+     * Add charge. Repeated mentions build; the half-life lets them fade.
+     * This is the wave's way in — a leaky integrator, not a switch.
+     */
+    energize(index, amount) {
+      if (index === pinned || !(amount > 0)) return;
+      target.set(index, Math.min(1, (target.get(index) ?? 0) + amount));
+    },
+    /** Weighted centre of everything alive, or null when nothing is. */
+    centroid(positionOf, min = 0.2) {
+      let x = 0, y = 0, w = 0;
+      for (const [index, v] of value) {
+        if (v < min) continue;
+        const p = positionOf(index);
+        if (!p) continue;
+        x += p[0] * v; y += p[1] * v; w += v;
+      }
+      return w > 0 ? { x: x / w, y: y / w, weight: w } : null;
+    },
     clear() {
       target.clear();
       pinned = -1;

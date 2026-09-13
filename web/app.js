@@ -1,6 +1,7 @@
 import { CONCEPTS, LINKS } from "./concepts.js";
 import { installVoice } from "./voice/index.js";
 import { createSalience } from "./salience.js";
+import { createWave } from "./wave/wave.js";
 
 // ---------------------------------------------------------------------------
 // A living field, not a folder tree.
@@ -76,6 +77,21 @@ const MAX_N = 14;
 let nodes = [];
 let edges = [];
 const salience = createSalience();
+// What a thought is *about*, for the embedder. Name first: it carries the most.
+const thoughtText = (index) => {
+  const node = nodes[index];
+  return `${node.name}. ${node.fragment} ${node.note} ${node.question} ${node.tags.join(", ")}`;
+};
+const wave = createWave({
+  energize: (index, amount) => salience.energize(index, amount),
+  textOf: thoughtText,
+  skip: (index) => Boolean(nodes[index]?.guide),
+  onPhrase: (phrase) => voice?.trace("wave", {
+    who: phrase.who,
+    text: phrase.text,
+    hits: phrase.hits.map((hit) => [nodes[hit.index].name, +hit.similarity.toFixed(3), +hit.energy.toFixed(3)]),
+  }),
+});
 
 const CLUSTERS = {
   reflective: [480, 420],
@@ -315,6 +331,29 @@ function step(time) {
           second.vy += dy;
         }
       }
+    }
+  }
+
+  // Contextual pull: thoughts the conversation has warmed lean toward one
+  // another — magnetism keyed to what is being said, not to the folder they
+  // came from. Bounded so the territory never collapses into a knot.
+  const alive = salience.top(8, 0.3).filter(({ index }) => !nodes[index].guide && !nodes[index]._claw);
+  for (let i = 0; i < alive.length; i++) {
+    for (let j = i + 1; j < alive.length; j++) {
+      const first = nodes[alive[i].index];
+      const second = nodes[alive[j].index];
+      let dx = second.x - first.x;
+      let dy = second.y - first.y;
+      const distance = Math.hypot(dx, dy) || 0.01;
+      const rest = (first._R + second._R) * 1.3;
+      if (distance <= rest) continue;
+      const pull = Math.min(0.02, (distance - rest) * 0.00009) * alive[i].value * alive[j].value;
+      dx *= pull / distance;
+      dy *= pull / distance;
+      first.vx += dx * 8;
+      first.vy += dy * 8;
+      second.vx -= dx * 8;
+      second.vy -= dy * 8;
     }
   }
 
@@ -740,8 +779,9 @@ function drawLabel(node, index, rawCenter, centerWorld, screenRadius, lifted, po
   const bandName = chooseLabelBand(fluid, screenRadius);
   const variant = node.guide ? "guide" : selected ? "selected" : "normal";
   const titleSprite = makeLabelSprite(node, bandName, variant, "title");
-  const shouldWhisper = !node.guide && ((lifted && screenRadius > 46) || (bandName === "large" && node.n >= 9));
-  const fragmentTarget = shouldWhisper ? (lifted ? 0.82 : 0.38) : 0;
+  const warmth = node.guide ? 0 : salience.of(index);
+  const shouldWhisper = !node.guide && ((lifted && screenRadius > 46) || (bandName === "large" && node.n >= 9) || (warmth > 0.4 && screenRadius > 38));
+  const fragmentTarget = shouldWhisper ? Math.max(lifted ? 0.82 : 0.38, warmth * 0.85) : 0;
   fluid.fragmentAlpha += (fragmentTarget - fluid.fragmentAlpha) * 0.055;
   fluid.emphasis += ((lifted || node.guide ? 1 : 0.78) - fluid.emphasis) * 0.1;
 
@@ -853,8 +893,20 @@ function cancelCameraMomentum() {
   cameraMomentum.y = 0;
 }
 
+// When nobody is reading or dragging, the view drifts toward where the
+// conversation is. Slowly: it should feel like the pond turning, not a cut.
+function followConversation() {
+  if (focusId >= 0 || cameraIsDragging || pointerDown) return;
+  const centre = salience.centroid((index) => (nodes[index].guide ? null : [nodes[index].x, nodes[index].y]), 0.3);
+  if (!centre || centre.weight < 0.5) return;
+  const strength = Math.min(1, centre.weight / 1.6) * 0.018;
+  cam.tx += (centre.x - cam.tx) * strength;
+  cam.ty += (centre.y - cam.ty) * strength;
+}
+
 function tickCamera() {
   const ease = REDUCED_MOTION ? 1 : 0.075;
+  followConversation();
   const momentumSpeed = Math.hypot(cameraMomentum.x, cameraMomentum.y);
   if (!cameraIsDragging && !REDUCED_MOTION && momentumSpeed > 0.012) {
     cam.x += cameraMomentum.x * textFrameFactor;
@@ -1634,6 +1686,7 @@ const atlasTools = {
       y: anchor.y + Math.sin(angle) * 105,
     });
     nodes.push(concept);
+    wave.index([nodes.length - 1]);
     if (anchorIndex >= 0) edges.push({ a: anchorIndex, b: nodes.length - 1, relation: "this thought surfaced nearby" });
     document.getElementById("concept-count").textContent = String(nodes.filter((node) => !node.guide).length);
     document.getElementById("link-count").textContent = String(edges.length);
@@ -1658,10 +1711,16 @@ function readView() {
   };
 }
 
-voice = installVoice({ tools: atlasTools, read: readView, onOpen: dismissWelcome });
+voice = installVoice({
+  tools: atlasTools,
+  read: readView,
+  onOpen: dismissWelcome,
+  hear: (fragment) => wave.hear(fragment),
+  onClose: () => wave.quiet(),
+});
 // ?debug exposes the same port the voice layer uses, so a tool can be tried
 // from the console without spending a voice session on it.
-if (new URLSearchParams(location.search).has("debug")) window.abacus = { tools: atlasTools, read: readView, salience };
+if (new URLSearchParams(location.search).has("debug")) window.abacus = { tools: atlasTools, read: readView, salience, wave };
 
 // ---------------------------------------------------------------------------
 // Boot.
@@ -1675,6 +1734,8 @@ nodes.forEach((node) => {
 for (let i = 0; i < 220; i++) step(i * 0.016);
 document.getElementById("concept-count").textContent = String(CONCEPTS.length);
 document.getElementById("link-count").textContent = String(LINKS.length);
+wave.index(nodes.map((_, index) => index));
+wave.ready.then((state) => console.info(state.ok ? `[wave] ${state.model} ready in ${state.ms} ms` : `[wave] off: ${state.message}`));
 updateTrail();
 recenter();
 requestAnimationFrame(loop);
