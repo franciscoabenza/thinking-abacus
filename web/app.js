@@ -2,7 +2,7 @@ import { CONCEPTS, LINKS } from "./concepts.js";
 import { installVoice } from "./voice/index.js";
 import { createSalience } from "./salience.js";
 import { createWave } from "./wave/wave.js";
-import { createFerrofluid } from "./ferrofluid.js";
+import { createSeep } from "./seep.js";
 
 // ---------------------------------------------------------------------------
 // A living field, not a folder tree.
@@ -78,7 +78,7 @@ const MAX_N = 14;
 let nodes = [];
 let edges = [];
 const salience = createSalience();
-const fluid = createFerrofluid();
+const seep = createSeep({ world: WORLD });
 // What a thought is *about*, for the embedder. Name first: it carries the most.
 const thoughtText = (index) => {
   const node = nodes[index];
@@ -361,18 +361,22 @@ function step(time) {
     }
   }
 
-  // The ferrofluid: poles are the alive thoughts; home is the guide's cell.
+  // The ink in the cracks: cells block, the guide's cell is the reservoir,
+  // alive thoughts are the poles it seeps toward.
   const guideNode = nodes.find((node) => node.guide);
-  if (guideNode) {
-    fluid.step(
-      { x: guideNode.x, y: guideNode.y },
-      alive.map(({ index, value }) => ({ x: nodes[index].x, y: nodes[index].y, strength: value, radius: nodes[index]._R })),
-      textFrameFactor,
-    );
-    // The cell follows its own mass, slowly, so the black form migrates
-    // toward the conversation while the tessellation keeps its rules.
-    guideNode.vx += (fluid.centre.x - guideNode.x) * 0.0009;
-    guideNode.vy += (fluid.centre.y - guideNode.y) * 0.0009;
+  if (guideNode?._insetWorld) {
+    const [gx, gy] = guideNode._insetWorld.reduce(([x, y], p) => [x + p[0], y + p[1]], [0, 0]).map((v) => v / guideNode._insetWorld.length);
+    seep.update({
+      blockers: nodes.filter((node) => !node.guide && node._insetWorld).map((node) => node._insetWorld),
+      source: guideNode._insetWorld.map(([x, y]) => [gx + (x - gx) * 0.88, gy + (y - gy) * 0.88]),
+      poles: alive.map(({ index, value }) => ({ x: nodes[index].x, y: nodes[index].y, strength: value })),
+      frame: textFrameFactor,
+    });
+    // The cell leans after its own ink, slowly, so the reservoir migrates
+    // toward a sustained conversation without breaking the tessellation.
+    const lean = Math.min(1, seep.volume / 160) * 0.0006;
+    guideNode.vx += (seep.centroid.x - guideNode.x) * lean;
+    guideNode.vy += (seep.centroid.y - guideNode.y) * lean;
   }
 
   const amplitude = REDUCED_MOTION ? 0 : 0.012 + 0.05 * CFG.motion;
@@ -835,6 +839,7 @@ function draw(time) {
       return rank(a) - rank(b);
     });
 
+  const labels = [];
   for (const index of order) {
     const node = nodes[index];
     const cell = cellOf(node);
@@ -854,18 +859,13 @@ function draw(time) {
       centerWorld[1] + (point[1] - centerWorld[1]) * inset * grow,
     ]));
     node._poly = screenPoly;
+    node._insetWorld = cell.map((point) => [
+      centerWorld[0] + (point[0] - centerWorld[0]) * inset * grow,
+      centerWorld[1] + (point[1] - centerWorld[1]) * inset * grow,
+    ]);
     const center = worldToScreen(centerWorld);
     const screenRadius = node._R * cam.scale;
 
-    if (node.guide) {
-      // The guide's cell is drawn last; its fluid goes just beneath it, over
-      // everything else, so tendrils reach across neighbours.
-      fluid.draw(ctx, worldToScreen, cam.scale, {
-        fill: "rgba(21,23,19,0.94)",
-        rim: PAL.acid,
-        stepPx: isPhone() ? 7 : 5,
-      });
-    }
     roundPath(screenPoly, CFG.round);
     if (node.guide) {
       ctx.fillStyle = PAL.ink;
@@ -899,9 +899,13 @@ function draw(time) {
       ctx.fill();
     }
 
-    drawLabel(node, index, center, centerWorld, screenRadius, lifted, screenPoly, time);
+    labels.push([node, index, center, centerWorld, screenRadius, lifted, screenPoly]);
   }
   ctx.setLineDash([]);
+
+  // Ink over the cracks, under the words.
+  seep.draw(ctx, worldToScreen, { fill: "rgba(21,23,19,0.95)", rim: PAL.acid });
+  for (const args of labels) drawLabel(...args, time);
 }
 
 // ---------------------------------------------------------------------------
@@ -1748,7 +1752,7 @@ voice = installVoice({
 });
 // ?debug exposes the same port the voice layer uses, so a tool can be tried
 // from the console without spending a voice session on it.
-if (new URLSearchParams(location.search).has("debug")) window.abacus = { tools: atlasTools, read: readView, salience, wave, fluid, get nodes() { return nodes; } };
+if (new URLSearchParams(location.search).has("debug")) window.abacus = { tools: atlasTools, read: readView, salience, wave, seep, get nodes() { return nodes; } };
 
 // ---------------------------------------------------------------------------
 // Boot.

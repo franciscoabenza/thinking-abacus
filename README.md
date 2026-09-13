@@ -73,14 +73,16 @@ pull between them, and a camera that drifts toward the conversation.
 `?debug` exposes `abacus.wave.say("…")` so the field can be driven from the
 console without a voice session.
 
-### The ferrofluid
+### The ink in the cracks
 
-The black guide cell is a fluid (`web/ferrofluid.js`): particles held by
-cohesion and volume, damped by viscosity, homed to the cell, and pulled by
-every alive thought. Under a strong field it reaches out and stretches
-between ideas; quiet, it collapses back into its form. Alive thoughts also
-pull on one another, reshaping the tessellation without ever overlapping.
-The surface is marching-squares metaballs, so it needs no canvas filters.
+The black guide cell is a reservoir (`web/seep.js`). Between the cells of the
+territory there is negative space — grout lines and junctions — and ink flows
+through it: out of the reservoir, along channels that lead toward the thoughts
+the conversation has made alive, splitting where a channel splits, draining
+back home when the field goes quiet. A coarse grid is re-masked from the cell
+polygons every frame; the ink is a marching-squares surface over it, so no
+canvas filters are needed. Alive thoughts also pull on one another, reshaping
+the tessellation without ever overlapping.
 
 ### Traces
 
@@ -98,7 +100,7 @@ Each file has a small interface and hides a lot behind it.
 | `web/voice/agent.js` | `abacusSession()` | Abacus's identity — the split between the voice prompt and the backend prompt, and the tool schemas. **Imported by both `server.js` and the browser**, so there is one definition |
 | `web/voice/narrator.js` | `createNarrator()` | turning atlas state into concise context updates, debounced and deduped |
 | `web/voice/panel.js` | `createVoicePanel()` | every element id, and the words used for each state |
-| `web/ferrofluid.js` | `createFerrofluid()` | the guide as a fluid: particle physics, the scalar field, marching-squares contouring |
+| `web/seep.js` | `createSeep()` | ink through the cracks: the passability mask, the flow toward poles and home, the budget, the contour |
 | `web/salience.js` | `createSalience()` | how alive each thought is: eased, decaying, pinned by reading, energised by the wave |
 | `web/wave/wave.js` | `createWave()` | phrases → embeddings → charge; the worker, the queue, the sharpening, the failure mode |
 | `web/voice/trace.js` | `createTrace()` | a pure timestamped log of one conversation, batched to the server |

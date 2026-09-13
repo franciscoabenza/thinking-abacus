@@ -154,26 +154,33 @@ magnetism to life" — before Phase 3.
 - [x] **Magnetism between ideas.** Alive thoughts attract one another hard
       enough to visibly reshape the tessellation; the existing separation
       pass keeps cells from overlapping, so the Voronoi rules hold.
-- [x] **The fluid.** `web/ferrofluid.js`: 36 particles with cohesion,
-      volume, viscosity, a home spring to the guide's cell, and a magnetic
-      pull from every alive thought (1/(1+(d/420)²), scaled by its charge).
-      Quiet: a 43-unit blob inside the 66-unit cell. One strong pole: the
-      mass moves ~100 units toward it, nearest particles further. Two
-      opposed poles: it stretches between them. Rendered as metaballs by
-      marching squares (no canvas filters — iOS-safe), ink with an acid rim,
-      drawn under the guide cell so tendrils cross neighbours.
-- [x] **The cell follows its mass.** The guide's generator is pulled toward
-      the fluid's centroid, so the black form migrates toward a sustained
-      conversation and returns to the centre when it goes quiet.
-- [x] **The blue stroke steps back** to a whisper; motion is the signal.
-- [ ] **Rosensweig spikes.** Under a strong field, real ferrofluid corrugates
-      into spikes along the field direction. A cheap version: modulate the
-      metaball threshold with a field-aligned ripple; do it if the smooth
-      blob feels too tame.
-- [ ] **Concentrated ↔ distributed as a parameter** (cohesion and home
-      strength); a "mood" the backend could set.
-- [ ] **Tune from a real device.** The harness cannot show motion; Fran
-      judges reach, speed and gooeyness on the phone.
+- [x] **Attempt 1 (rejected):** a particle-metaball blob on top of the cell.
+      Fran: "two distinct blobs… awkward"; the reach was timid. Reverted in
+      favour of attempt 2. (`2966a99`, kept in history.)
+- [x] **Attempt 2: ink in the cracks.** `web/seep.js`. The black cell is a
+      reservoir; the negative space between cells — grout lines, junctions,
+      the wider pools where a cell's own radius clips it — is a channel
+      network. A coarse grid (5 world units) over the territory is
+      re-masked each frame from the inset cell polygons (rasterised 6 %
+      smaller so channels are 3–4 cells wide and the ink licks the rims).
+      Ink flows out of the reservoir through passable cells, downhill toward
+      the alive thoughts (their charge sets the field), splitting wherever
+      a channel splits; a budget tied to the field's strength sets how far
+      it reaches; when the field goes quiet it flows back home and is
+      absorbed. Drawn as a marching-squares surface with a rim that
+      brightens as it reaches. Two flow passes per frame; ~0.9 ms per
+      update in Node. The cell leans after its own ink, slowly.
+- [ ] **Tune from a real device.** The harness cannot show motion. Fran
+      judges: reach (`budgetPerStrength`), speed (`substeps`, `driftFlow`),
+      fatness (`baseFlow`, `threshold`, `shrink`), and how it pools around
+      an idea's rim.
+- [ ] **Wrap the idea.** When a vein arrives, let the ink run all the way
+      around the thought's rim (a stronger pull along a pole's boundary),
+      so the mind visibly holds the idea.
+- [ ] **Rosensweig spikes** at the front under a strong field, if the tips
+      feel too tame.
+- [ ] **Concentrated ↔ distributed as a parameter** (budget and retreat),
+      a mood the backend could set.
 
 ## Phase 5 — Using it is improving it
 
