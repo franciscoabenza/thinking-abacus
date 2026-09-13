@@ -14,7 +14,7 @@
 const DEFAULTS = { ease: 0.07, halfLifeMs: 22_000, floor: 0.01, unpinnedTo: 0.55 };
 
 export function createSalience(options = {}) {
-  const { ease, halfLifeMs, floor, unpinnedTo } = { ...DEFAULTS, ...options };
+  let { ease, halfLifeMs, floor, unpinnedTo } = { ...DEFAULTS, ...options };
   /** index -> current eased value */
   const value = new Map();
   /** index -> where the value is heading */
@@ -73,6 +73,11 @@ export function createSalience(options = {}) {
         .sort((a, b) => b[1] - a[1])
         .slice(0, n)
         .map(([index, v]) => ({ index, value: v }));
+    },
+    /** Retune the dynamics live. */
+    configure(patch = {}) {
+      if (Number.isFinite(patch.ease)) ease = patch.ease;
+      if (Number.isFinite(patch.halfLifeMs)) halfLifeMs = patch.halfLifeMs;
     },
     /** Call once per frame. Decay is wall-clock, so a paused tab does not freeze it. */
     tick(now = performance.now()) {

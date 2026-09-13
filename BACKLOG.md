@@ -237,6 +237,12 @@ phone ring.
 
 ## Cross-cutting
 
+- **Declarative physics.** `web/physics.js` declares every tunable; knobs are
+  multipliers; `?tune` shows the panel; `?tune=<json>` carries a tuning;
+  changes land in the trace. Fran fiddles, then sends the link. (Shipped
+  2026-09-13.) Next: a "save as preset" button and named presets the backend
+  could switch between (concentrated ↔ distributed).
+
 - **Phasing the work itself.** One phase per session where possible; each
   phase ends with a Fran-testable build behind the tunnel. The context window
   is a budget: new sessions start from this file and the vision file.

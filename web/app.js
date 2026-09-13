@@ -3,6 +3,8 @@ import { installVoice } from "./voice/index.js";
 import { createSalience } from "./salience.js";
 import { createWave } from "./wave/wave.js";
 import { createSeep } from "./seep.js";
+import { createPhysics } from "./physics.js";
+import { createTunePanel } from "./tune.js";
 
 // ---------------------------------------------------------------------------
 // A living field, not a folder tree.
@@ -77,8 +79,24 @@ function screenToWorld(sx, sy) {
 const MAX_N = 14;
 let nodes = [];
 let edges = [];
+// Every tunable number, declared once; knobs are multipliers over it.
+const physics = createPhysics();
 const salience = createSalience();
-const seep = createSeep({ world: WORLD });
+const seep = createSeep({
+  world: WORLD,
+  tune: {
+    get budgetPerStrength() { return physics.value("inkBudget"); },
+    get driftFlow() { return physics.value("inkDrift"); },
+    get baseFlow() { return physics.value("inkBase"); },
+    get substeps() { return physics.value("inkSubsteps"); },
+    get retreat() { return physics.value("inkRetreat"); },
+    get threshold() { return physics.value("inkThreshold"); },
+    get shrink() { return physics.value("inkShrink"); },
+    get reach() { return physics.value("inkReach"); },
+  },
+});
+physics.onChange(() => salience.configure({ ease: physics.value("fieldEase"), halfLifeMs: physics.value("fieldHalfLife") }));
+salience.configure({ ease: physics.value("fieldEase"), halfLifeMs: physics.value("fieldHalfLife") });
 // What a thought is *about*, for the embedder. Name first: it carries the most.
 const thoughtText = (index) => {
   const node = nodes[index];
@@ -88,6 +106,11 @@ const wave = createWave({
   energize: (index, amount) => salience.energize(index, amount),
   textOf: thoughtText,
   skip: (index) => Boolean(nodes[index]?.guide),
+  tune: {
+    get visitorGain() { return physics.value("waveVisitor"); },
+    get abacusGain() { return physics.value("waveAbacus"); },
+    get floor() { return physics.value("waveFloor"); },
+  },
   onPhrase: (phrase) => voice?.trace("wave", {
     who: phrase.who,
     text: phrase.text,
@@ -347,11 +370,11 @@ function step(time) {
       let dx = second.x - first.x;
       let dy = second.y - first.y;
       const distance = Math.hypot(dx, dy) || 0.01;
-      const rest = (first._R + second._R) * 1.2;
+      const rest = (first._R + second._R) * physics.value("magnetRest");
       if (distance <= rest) continue;
       // Strong enough to visibly reshape the tessellation; the separation
       // pass below still refuses to let two cells overlap.
-      const pull = Math.min(0.05, (distance - rest) * 0.00024) * alive[i].value * alive[j].value;
+      const pull = Math.min(physics.value("magnetCap"), (distance - rest) * physics.value("magnetPull")) * alive[i].value * alive[j].value;
       dx *= pull / distance;
       dy *= pull / distance;
       first.vx += dx * 8;
@@ -374,7 +397,7 @@ function step(time) {
     });
     // The cell leans after its own ink, slowly, so the reservoir migrates
     // toward a sustained conversation without breaking the tessellation.
-    const lean = Math.min(1, seep.volume / 160) * 0.0006;
+    const lean = Math.min(1, seep.volume / 160) * physics.value("guideLean");
     guideNode.vx += (seep.centroid.x - guideNode.x) * lean;
     guideNode.vy += (seep.centroid.y - guideNode.y) * lean;
   }
@@ -931,7 +954,7 @@ function followConversation() {
   if (focusId >= 0 || cameraIsDragging || pointerDown) return;
   const centre = salience.centroid((index) => (nodes[index].guide ? null : [nodes[index].x, nodes[index].y]), 0.3);
   if (!centre || centre.weight < 0.5) return;
-  const strength = Math.min(1, centre.weight / 1.6) * 0.018;
+  const strength = Math.min(1, centre.weight / 1.6) * physics.value("cameraFollow");
   cam.tx += (centre.x - cam.tx) * strength;
   cam.ty += (centre.y - cam.ty) * strength;
 }
@@ -1749,10 +1772,18 @@ voice = installVoice({
   onOpen: dismissWelcome,
   hear: (fragment) => wave.hear(fragment),
   onClose: () => wave.quiet(),
+  physics: () => physics.toJSON(),
 });
+
+// Knobs: ?tune (or ?debug) shows the panel; every change is traced, so a
+// "that felt right" moment in a conversation carries its numbers.
+const query = new URLSearchParams(location.search);
+if (query.has("tune") || query.has("debug")) {
+  createTunePanel(physics, { onChange: (change) => voice?.trace("tune", change) });
+}
 // ?debug exposes the same port the voice layer uses, so a tool can be tried
 // from the console without spending a voice session on it.
-if (new URLSearchParams(location.search).has("debug")) window.abacus = { tools: atlasTools, read: readView, salience, wave, seep, get nodes() { return nodes; } };
+if (new URLSearchParams(location.search).has("debug")) window.abacus = { tools: atlasTools, read: readView, salience, wave, seep, physics, get nodes() { return nodes; } };
 
 // ---------------------------------------------------------------------------
 // Boot.

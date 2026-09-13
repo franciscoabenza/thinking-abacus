@@ -36,9 +36,12 @@ function pointInPoly(poly, x, y) {
   return inside;
 }
 
-export function createSeep({ world, ...options }) {
-  const cfg = { ...DEFAULTS, ...options };
-  const S = cfg.step;
+export function createSeep({ world, tune, ...options }) {
+  // Grid geometry is fixed at creation; everything else is read live so knobs
+  // apply on the next frame.
+  const fixed = { ...DEFAULTS, ...options };
+  const cfg = new Proxy(fixed, { get: (target, key) => (tune && key in tune && tune[key] != null ? tune[key] : target[key]) });
+  const S = fixed.step;
   const X0 = -cfg.margin, Y0 = -cfg.margin;
   const W = Math.ceil((world.w + cfg.margin * 2) / S);
   const H = Math.ceil((world.h + cfg.margin * 2) / S);

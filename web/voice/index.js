@@ -46,6 +46,7 @@ function accessKey() {
  * @param {() => void} [atlas.onOpen]                              The map is about to be spoken to.
  * @param {(fragment: object) => void} [atlas.hear]                Every transcript fragment, both speakers.
  * @param {() => void} [atlas.onClose]                             The conversation has ended.
+ * @param {() => object} [atlas.physics]                           The tuning in force, for the trace.
  */
 export function installVoice(atlas, { endpoint = "/session" } = {}) {
   // The schemas the backend is given and the handlers the browser runs are
@@ -148,6 +149,7 @@ export function installVoice(atlas, { endpoint = "/session" } = {}) {
       atlas.onOpen?.();
       trace = createTrace({ key, meta: { phone: innerWidth < 640 } });
       trace.note("session.open");
+      if (atlas.physics) trace.note("physics", { multipliers: atlas.physics() });
       await session.open();
       trace.live(session.id);
       narrator.start();

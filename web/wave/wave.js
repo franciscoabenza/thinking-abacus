@@ -17,8 +17,8 @@ const RELEVANCE = { floor: 0.2, ceil: 0.55, power: 1.6 };
 const TOP_K = 4;
 const GAIN = { visitor: 0.55, abacus: 0.3 };
 
-function relevanceOf(similarity) {
-  const t = (similarity - RELEVANCE.floor) / (RELEVANCE.ceil - RELEVANCE.floor);
+function relevanceOf(similarity, floor = RELEVANCE.floor) {
+  const t = (similarity - floor) / (RELEVANCE.ceil - floor);
   return t <= 0 ? 0 : Math.min(1, t) ** RELEVANCE.power;
 }
 
@@ -35,7 +35,7 @@ function dot(a, b) {
  * @param {(index: number) => boolean} [options.skip]                 Thoughts the wave should ignore (the guide).
  * @param {(hit: object) => void} [options.onPhrase]                  Every phrase and where its energy went.
  */
-export function createWave({ energize, textOf, skip = () => false, onPhrase }) {
+export function createWave({ energize, textOf, skip = () => false, onPhrase, tune }) {
   const embedder = createEmbedder();
   /** index -> unit vector */
   const vectors = new Map();
@@ -63,9 +63,10 @@ export function createWave({ energize, textOf, skip = () => false, onPhrase }) {
     }
     await indexing;
     const scored = [];
+    const floor = tune?.floor ?? RELEVANCE.floor;
     for (const [i, v] of vectors) {
       const similarity = dot(vector, v);
-      const relevance = relevanceOf(similarity);
+      const relevance = relevanceOf(similarity, floor);
       if (relevance > 0) scored.push({ index: i, similarity, relevance });
     }
     scored.sort((a, b) => b.relevance - a.relevance);
@@ -73,7 +74,7 @@ export function createWave({ energize, textOf, skip = () => false, onPhrase }) {
     // Energy is shared: the phrase can only say so much, and a chorus of
     // near-matches must not all light up equally.
     const total = hits.reduce((s, h) => s + h.relevance, 0) || 1;
-    const gain = GAIN[phrase.who] ?? GAIN.abacus;
+    const gain = phrase.who === "visitor" ? (tune?.visitorGain ?? GAIN.visitor) : (tune?.abacusGain ?? GAIN.abacus);
     for (const hit of hits) {
       hit.energy = gain * hit.relevance * (0.6 + 0.4 * (hit.relevance / total));
       energize(hit.index, hit.energy);

@@ -358,3 +358,22 @@ button:focus-visible, input:focus-visible, a:focus-visible { outline: 2px solid 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
 }
+
+/* Tuning knobs (?tune) */
+#tune { position: fixed; z-index: 30; top: 12px; right: 12px; display: flex; flex-direction: column; align-items: flex-end; gap: 8px; font: 300 11px/1.3 var(--mono); color: var(--ink); }
+#tune .tune-toggle { padding: 8px 12px; border: 1px solid var(--rule); border-radius: 999px; background: var(--paper-glass); backdrop-filter: blur(12px); font: inherit; cursor: pointer; }
+#tune .tune-body { width: min(360px, calc(100vw - 24px)); max-height: min(70vh, 640px); overflow: auto; padding: 14px 14px 10px; border: 1px solid var(--rule); border-radius: 14px; background: var(--paper-glass); backdrop-filter: blur(14px); box-shadow: 0 13px 40px rgba(35,29,18,.12); }
+#tune .tune-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
+#tune .tune-actions { display: flex; gap: 6px; }
+#tune .tune-actions button { padding: 6px 10px; border: 1px solid var(--rule); border-radius: 999px; background: transparent; font: inherit; cursor: pointer; }
+#tune .tune-actions button:first-child { background: var(--ink); color: var(--paper-hi); border-color: var(--ink); }
+#tune h3 { margin: 12px 0 4px; font: 400 10px/1 var(--mono); letter-spacing: .12em; text-transform: uppercase; color: var(--ink-soft); }
+#tune .tune-row { display: grid; grid-template-columns: 1fr; gap: 4px; padding: 6px 0; border-top: 1px solid rgba(21,23,19,.08); }
+#tune .tune-label i { font-style: normal; color: var(--ink-soft); }
+#tune .tune-row input[type="range"] { width: 100%; height: 28px; accent-color: var(--blue); }
+#tune output { color: var(--ink-soft); font-variant-numeric: tabular-nums; }
+#tune .tune-link { width: 100%; margin-top: 10px; padding: 6px 8px; border: 1px solid var(--rule); border-radius: 6px; background: transparent; font: inherit; color: var(--ink-soft); }
+@media (max-width: 640px) {
+  #tune { top: auto; bottom: calc(80px + env(safe-area-inset-bottom, 0px)); right: 10px; }
+  #tune .tune-body { max-height: 55vh; }
+}

@@ -84,6 +84,17 @@ polygons every frame; the ink is a marching-squares surface over it, so no
 canvas filters are needed. Alive thoughts also pull on one another, reshaping
 the tessellation without ever overlapping.
 
+### Physics, declared — and knobs
+
+Every number that shapes motion is declared once in `web/physics.js` (base
+value, group, label, range); the atlas reads live values from there. A knob
+is a multiplier over its base, so ×3 means the same on every slider. Open the
+page with `?tune` to get the panel: sliders per knob, a **×3 forces** preset,
+reset, and **copy link** — the link carries the tuning (`?tune=…`) so a
+setting that felt right can be sent on. Tunings persist per browser, and
+every change is written into the session trace next to the words that were
+being said.
+
 ### Traces
 
 Every conversation is written to `traces/<day>/<trace>.jsonl`: both speakers' words with timestamps, tool calls and results, what the guide was told was on screen, presence, errors, and feedback notes. `npm run trace` replays the latest session as a timeline; `npm run trace -- --list` and `-- --feedback` do what they say. The folder is git-ignored.
@@ -100,6 +111,8 @@ Each file has a small interface and hides a lot behind it.
 | `web/voice/agent.js` | `abacusSession()` | Abacus's identity — the split between the voice prompt and the backend prompt, and the tool schemas. **Imported by both `server.js` and the browser**, so there is one definition |
 | `web/voice/narrator.js` | `createNarrator()` | turning atlas state into concise context updates, debounced and deduped |
 | `web/voice/panel.js` | `createVoicePanel()` | every element id, and the words used for each state |
+| `web/physics.js` | `createPhysics()` | the tunable numbers as a schema with live multipliers, persistence, and a link format |
+| `web/tune.js` | `createTunePanel()` | the sliders |
 | `web/seep.js` | `createSeep()` | ink through the cracks: the passability mask, the flow toward poles and home, the budget, the contour |
 | `web/salience.js` | `createSalience()` | how alive each thought is: eased, decaying, pinned by reading, energised by the wave |
 | `web/wave/wave.js` | `createWave()` | phrases → embeddings → charge; the worker, the queue, the sharpening, the failure mode |
