@@ -32,7 +32,7 @@ button { color: inherit; }
 button:focus-visible, input:focus-visible, a:focus-visible { outline: 2px solid var(--blue); outline-offset: 3px; }
 [hidden] { display: none !important; }
 
-#stage { position: relative; width: 100vw; height: 100vh; isolation: isolate; }
+#stage { position: relative; width: 100vw; height: 100vh; height: 100dvh; isolation: isolate; }
 #stage::after {
   content: "";
   position: absolute;
@@ -247,6 +247,12 @@ button:focus-visible, input:focus-visible, a:focus-visible { outline: 2px solid 
 #voice-button.live .sound-mark i:nth-child(2) { animation-delay: -.3s; }
 @keyframes listening { to { transform: scaleY(.42); } }
 
+/* Full duplex: hearing and speaking are separate states that can overlap. */
+#voice-button[data-speaking="true"] .sound-mark i { animation-duration: .45s; }
+#voice-button[data-hearing="true"] .sound-mark i { background: var(--paper-hi); }
+#voice-button[data-working="true"] .sound-mark i:nth-child(2) { background: var(--coral); }
+#mic-toggle.muted { opacity: .55; text-decoration: line-through; }
+
 #hint {
   position: absolute;
   z-index: 10;
@@ -299,23 +305,50 @@ button:focus-visible, input:focus-visible, a:focus-visible { outline: 2px solid 
   .detail-rule { margin-bottom: 28px; }
   #detail-name { font-size: 44px; }
   #trail { display: none; }
-  #dock { bottom: 13px; max-width: calc(100vw - 20px); }
-  #dock button { padding: 0 12px; }
+  /* Above the browser's own bottom bar, which otherwise swallows the dock. */
+  #dock { bottom: calc(14px + env(safe-area-inset-bottom, 0px)); max-width: calc(100vw - 20px); }
+  #dock button { padding: 0 12px; min-height: 44px; }
+  #dock kbd { display: none; }
   #search-open { font-size: 0 !important; }
-  #search-open > span, #search-open kbd { font-size: 12px; }
+  #search-open > span { font-size: 16px; }
   #recenter { display: none !important; }
+  #detail { bottom: calc(82px + env(safe-area-inset-bottom, 0px)); }
 }
 
 @media (max-width: 520px) {
   .descriptor { display: none; }
   #atlas-meta { display: none; }
-  #welcome { top: 47%; }
-  #welcome > p:not(.kicker) { max-width: 31ch; }
-  #dock { width: calc(100vw - 20px); justify-content: space-between; }
+  /* The welcome becomes a glass sheet over the lower field, not a poster on
+     top of the cells. A tap anywhere on the field lifts it. */
+  #welcome {
+    top: auto;
+    bottom: calc(86px + env(safe-area-inset-bottom, 0px));
+    left: 12px;
+    width: calc(100vw - 24px);
+    padding: 16px 18px 18px;
+    border: 1px solid var(--rule);
+    border-radius: 18px 18px 6px 6px;
+    background: var(--paper-glass);
+    backdrop-filter: blur(14px);
+    transform: none;
+  }
+  #welcome.dismissed { transform: translateY(18%); }
+  #welcome h1 { margin: 10px 0 12px; font-size: clamp(32px, 9.6vw, 42px); line-height: .9; }
+  #welcome > p:not(.kicker) { max-width: none; font-size: 12.5px; }
+  #begin { margin-top: 14px; }
+  #dock { width: calc(100vw - 20px); justify-content: space-between; gap: 4px; }
   #dock button { flex: 1; justify-content: center; }
   #dock button + button { border-left: 0; }
-  #voice-button { max-width: 48%; }
-  #drift { max-width: 38%; }
+  /* Voice is the primary control on a phone. (#dock #voice-button outranks
+     the transparent #dock button rule; a bare #voice-button does not.) */
+  #dock #voice-button { flex: 2.2; max-width: none; min-height: 48px; background: var(--ink); color: var(--paper-hi); font-size: 11px; }
+  #dock #voice-button.live { background: var(--acid); color: var(--ink); }
+  #dock #voice-button.live .sound-mark i { background: var(--ink); }
+  #dock #voice-button:disabled { opacity: .7; }
+  /* Leave room above the sheet for the cell being read. */
+  #detail { max-height: 50vh; max-height: 50dvh; padding: 20px; }
+  #detail-name { font-size: 34px; }
+  #drift { max-width: none; }
   #voice-label { overflow: hidden; text-overflow: ellipsis; }
   #search-title { margin-top: 28px; }
   .search-card { padding: 22px; }

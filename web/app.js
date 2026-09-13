@@ -1,10 +1,11 @@
 import { CONCEPTS, LINKS } from "./concepts.js";
+import { installVoice } from "./voice/index.js";
+import { createSalience } from "./salience.js";
 
 // ---------------------------------------------------------------------------
 // A living field, not a folder tree.
 // ---------------------------------------------------------------------------
 const CFG = { round: 8, pack: 0.9, hier: 0.62, motion: 0.018 };
-const MODEL = "gpt-realtime-2";
 const REDUCED_MOTION = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 const PAL = {
@@ -45,7 +46,11 @@ function resize() {
   cv.height = Math.round(VH * dpr);
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 }
-window.addEventListener("resize", resize);
+window.addEventListener("resize", () => {
+  const wasPhone = VW < PHONE_WIDTH;
+  resize();
+  if (nodes.length && wasPhone !== VW < PHONE_WIDTH && focusId < 0) recenter();
+});
 
 const cam = {
   x: WORLD.w / 2,
@@ -70,6 +75,7 @@ function screenToWorld(sx, sy) {
 const MAX_N = 14;
 let nodes = [];
 let edges = [];
+const salience = createSalience();
 
 const CLUSTERS = {
   reflective: [480, 420],
@@ -127,7 +133,6 @@ function makeNode(concept, opts = {}) {
     phase: (hashString(`${concept.id}-phase`) % 628) / 100,
     phase2: (hashString(`${concept.id}-phase-two`) % 628) / 100,
     sc: opts.spawned ? 0.02 : 1,
-    highlight: 0,
   };
 }
 
@@ -267,8 +272,8 @@ function step(time) {
     node._R = radiusOf(node);
     node._w2 = (node._R * 0.72) ** 2;
     node.sc += (1 - node.sc) * 0.08;
-    if (node.highlight > 0) node.highlight = Math.max(0, node.highlight - 0.009);
   }
+  salience.tick();
 
   for (const edge of edges) {
     const first = nodes[edge.a];
@@ -367,11 +372,15 @@ function drawFieldMarks() {
 }
 
 function drawThreads(time) {
-  if (focusId < 0) return;
-  const visibleEdges = edges.filter((edge) => edge.a === focusId || edge.b === focusId);
+  const visibleEdges = edges.filter((edge) =>
+    edge.a === focusId || edge.b === focusId ||
+    (Math.min(salience.of(edge.a), salience.of(edge.b)) > 0.28 && !nodes[edge.a].guide && !nodes[edge.b].guide));
+  if (!visibleEdges.length) return;
   ctx.save();
   ctx.lineCap = "round";
   for (const edge of visibleEdges) {
+    const onFocus = edge.a === focusId || edge.b === focusId;
+    const alive = Math.min(salience.of(edge.a), salience.of(edge.b));
     const from = worldToScreen([nodes[edge.a].x, nodes[edge.a].y]);
     const to = worldToScreen([nodes[edge.b].x, nodes[edge.b].y]);
     const dx = to[0] - from[0];
@@ -386,8 +395,14 @@ function drawThreads(time) {
     ctx.quadraticCurveTo(mx, my, to[0], to[1]);
     ctx.setLineDash(isArrival ? [4, 6] : [2, 7]);
     ctx.lineDashOffset = REDUCED_MOTION ? 0 : -time * (isArrival ? 10 : 4);
-    ctx.lineWidth = isArrival ? 2 : 1;
-    ctx.strokeStyle = isArrival ? "rgba(76,92,255,0.78)" : "rgba(21,23,19,0.2)";
+    if (onFocus) {
+      ctx.lineWidth = isArrival ? 2 : 1;
+      ctx.strokeStyle = isArrival ? "rgba(76,92,255,0.78)" : "rgba(21,23,19,0.2)";
+    } else {
+      // A thread between two thoughts the conversation has warmed.
+      ctx.lineWidth = 0.8 + alive * 1.2;
+      ctx.strokeStyle = `rgba(76,92,255,${(0.15 + alive * 0.55).toFixed(3)})`;
+    }
     ctx.stroke();
   }
   ctx.restore();
@@ -549,6 +564,7 @@ function labelRevealTarget(node, index, center, lifted) {
 
   if (graphNeighborOf(index, focusId)) target = Math.max(target, 0.72);
   if (graphNeighborOf(index, hoverId)) target = Math.max(target, 0.58);
+  target = Math.max(target, salience.of(index) * 0.95);
   return target;
 }
 
@@ -757,9 +773,8 @@ function draw(time) {
   const order = nodes
     .map((node, index) => index)
     .sort((a, b) => {
-      const rankA = a === hoverId || a === focusId || nodes[a].guide ? 1 : 0;
-      const rankB = b === hoverId || b === focusId || nodes[b].guide ? 1 : 0;
-      return rankA - rankB;
+      const rank = (i) => (nodes[i].guide ? 3 : i === hoverId || i === focusId ? 2 : salience.of(i));
+      return rank(a) - rank(b);
     });
 
   for (const index of order) {
@@ -772,8 +787,10 @@ function draw(time) {
     const centerWorld = centroid(cell);
     const inset = 0.72 + 0.22 * CFG.pack;
     const lifted = index === hoverId || index === focusId;
+    const alive = node.guide ? 0 : salience.of(index);
     const pulse = REDUCED_MOTION ? 1 : 1 + 0.008 * Math.sin(time * 0.8 + node.phase);
-    const grow = node.sc * (lifted ? 1.035 : 1) * pulse;
+    // A thought the conversation has warmed leans in a little.
+    const grow = node.sc * (lifted ? 1.035 : 1 + 0.05 * alive) * pulse;
     const screenPoly = cell.map((point) => worldToScreen([
       centerWorld[0] + (point[0] - centerWorld[0]) * inset * grow,
       centerWorld[1] + (point[1] - centerWorld[1]) * inset * grow,
@@ -800,8 +817,8 @@ function draw(time) {
     } else {
       ctx.fillStyle = lifted ? (PAL.kinds[node.kind] || "#ffffff") : (PAL.kinds[node.kind] || PAL.cell);
       ctx.fill();
-      ctx.lineWidth = 0.85 + node.highlight * 1.6;
-      ctx.strokeStyle = node.spawned || node.highlight > 0 ? PAL.blue : PAL.stroke;
+      ctx.lineWidth = 0.85 + alive * 1.7;
+      ctx.strokeStyle = node.spawned ? PAL.blue : alive > 0.06 ? `rgba(76,92,255,${Math.min(1, 0.25 + alive).toFixed(3)})` : PAL.stroke;
       ctx.setLineDash(node.spawned ? [4, 4] : []);
       ctx.stroke();
     }
@@ -961,8 +978,24 @@ function loop(timestamp) {
   requestAnimationFrame(loop);
 }
 
+// Below this width, fingers replace a cursor: cells must be big enough to tap
+// and the first view must not be the whole territory squeezed into a palm.
+const PHONE_WIDTH = 640;
+const isPhone = () => VW < PHONE_WIDTH;
+
 function recenter() {
   cancelCameraMomentum();
+  document.getElementById("view-label").textContent = "OVERVIEW";
+  if (isPhone()) {
+    // About 560 world units across the screen: a typical cell spans roughly a
+    // third of the width, comfortably tappable, labels legible.
+    const guide = nodes.find((node) => node.guide) || { x: WORLD.w / 2, y: WORLD.h / 2 };
+    cam.tx = guide.x;
+    cam.ty = guide.y;
+    cam.ts = Math.max(0.55, Math.min(1.1, VW / 560));
+    voice?.viewChanged();
+    return;
+  }
   let minX = Infinity;
   let minY = Infinity;
   let maxX = -Infinity;
@@ -977,7 +1010,7 @@ function recenter() {
   cam.ty = (minY + maxY) / 2;
   const padding = 1.23;
   cam.ts = Math.min(VW / ((maxX - minX) * padding), VH / ((maxY - minY) * padding), 1.45);
-  document.getElementById("view-label").textContent = "OVERVIEW";
+  voice?.viewChanged();
 }
 
 // ---------------------------------------------------------------------------
@@ -1045,6 +1078,7 @@ function showDetail(node) {
   const detail = document.getElementById("detail");
   if (!node) {
     detail.classList.add("hidden");
+    voice?.viewChanged();
     return;
   }
 
@@ -1073,13 +1107,14 @@ function showDetail(node) {
   preview.textContent = next ? next.relation : "somewhere less obvious";
   detail.classList.remove("hidden");
   detail.scrollTop = 0;
+  voice?.viewChanged();
 }
 
 function focusNode(index, options = {}) {
   const node = nodes[index];
   if (!node) return;
   if (node.guide) {
-    document.getElementById("voice-button").click();
+    voice?.toggle();
     return;
   }
 
@@ -1087,16 +1122,16 @@ function focusNode(index, options = {}) {
   cancelCameraMomentum();
   previousFocusId = focusId;
   focusId = index;
-  node.highlight = 1;
+  salience.pin(index);
   if (options.record !== false && trail.at(-1) !== node.id) {
     trail.push(node.id);
     updateTrail();
   }
 
   const panelOffset = VW > 820 ? VW * 0.13 / Math.max(cam.scale, 0.65) : 0;
-  cam.tx = node.x + panelOffset;
-  cam.ty = node.y;
   cam.ts = Math.max(cam.ts, VW > 820 ? 1.13 : 0.96);
+  cam.tx = node.x + panelOffset;
+  cam.ty = isPhone() ? node.y + (VH * 0.26) / cam.ts : node.y;
   document.getElementById("view-label").textContent = node.name.toUpperCase();
   showDetail(node);
 }
@@ -1112,7 +1147,9 @@ function drift() {
   if (index >= 0) focusNode(index);
 }
 
-function findNode(query) {
+// `minScore` guards callers that must not land on a stray token match: a
+// name hit scores 70+, a single shared word only 7–16.
+function findNode(query, minScore = 1) {
   if (!query) return -1;
   const normalized = query.toLowerCase().trim();
   let bestIndex = -1;
@@ -1134,7 +1171,7 @@ function findNode(query) {
       bestIndex = index;
     }
   });
-  return bestScore > 0 ? bestIndex : -1;
+  return bestScore >= minScore ? bestIndex : -1;
 }
 
 function rankedSearch(query) {
@@ -1226,7 +1263,44 @@ function pickAt(x, y) {
   return -1;
 }
 
+// Two fingers: zoom about their midpoint and pan with it. A pinch is never a
+// tap and never a moor; the moment a second finger lands, any claw lets go.
+const pinch = { pointers: new Map(), active: false, startDistance: 1, startScale: 1, anchor: null };
+
+function pinchGeometry() {
+  const [a, b] = [...pinch.pointers.values()];
+  return { distance: Math.max(Math.hypot(a[0] - b[0], a[1] - b[1]), 1), mid: [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2] };
+}
+
+function beginPinch() {
+  releaseConceptClaw();
+  cancelCameraMomentum();
+  dismissWelcome();
+  cameraIsDragging = false;
+  pointerMoved = true;
+  const { distance, mid } = pinchGeometry();
+  pinch.active = true;
+  pinch.startDistance = distance;
+  pinch.startScale = cam.scale;
+  pinch.anchor = screenToWorld(mid[0], mid[1]);
+}
+
+function movePinch() {
+  const { distance, mid } = pinchGeometry();
+  const scale = Math.max(0.34, Math.min(2.35, pinch.startScale * (distance / pinch.startDistance)));
+  cam.scale = cam.ts = scale;
+  // The world point that was between the fingers stays between the fingers.
+  cam.x = cam.tx = pinch.anchor[0] - (mid[0] - VW / 2) / scale;
+  cam.y = cam.ty = pinch.anchor[1] - (mid[1] - VH / 2) / scale;
+}
+
 cv.addEventListener("pointerdown", (event) => {
+  pinch.pointers.set(event.pointerId, localPosition(event));
+  if (pinch.pointers.size >= 2) {
+    cv.setPointerCapture(event.pointerId);
+    beginPinch();
+    return;
+  }
   pointerDown = true;
   pointerMoved = false;
   lastPosition = localPosition(event);
@@ -1257,6 +1331,11 @@ cv.addEventListener("pointerdown", (event) => {
 });
 
 cv.addEventListener("pointermove", (event) => {
+  if (pinch.pointers.has(event.pointerId)) pinch.pointers.set(event.pointerId, localPosition(event));
+  if (pinch.active) {
+    if (pinch.pointers.size >= 2) movePinch();
+    return;
+  }
   const position = localPosition(event);
   pointerScreen = position;
   if (pointerDown) {
@@ -1311,6 +1390,19 @@ cv.addEventListener("pointermove", (event) => {
 });
 
 function finishPointer(event, cancelled = false) {
+  pinch.pointers.delete(event.pointerId);
+  if (pinch.active) {
+    pointerMoved = true;
+    if (pinch.pointers.size >= 1) {
+      // One finger left: carry on as a plain drag from where it is now.
+      lastPosition = [...pinch.pointers.values()][0];
+      pointerOrigin = [...lastPosition];
+      lastPointerTime = event.timeStamp;
+      cameraIsDragging = true;
+      return;
+    }
+    pinch.active = false;
+  }
   const position = localPosition(event);
   pointerScreen = position;
   if (conceptClaw.engaged) applyConceptClaw();
@@ -1323,6 +1415,7 @@ function finishPointer(event, cancelled = false) {
     const hit = pickAt(position[0], position[1]);
     releaseConceptClaw();
     if (hit >= 0) focusNode(hit);
+    else dismissWelcome();
   } else {
     releaseConceptClaw();
     dismissWelcome();
@@ -1362,18 +1455,17 @@ document.getElementById("follow-thread").addEventListener("click", () => {
   if (nextFollow >= 0) focusNode(nextFollow);
   else drift();
 });
-document.getElementById("recenter").addEventListener("click", () => {
+function leaveFocus() {
   focusId = -1;
   previousFocusId = -1;
+  salience.unpin();
   showDetail(null);
   recenter();
-});
+}
+document.getElementById("recenter").addEventListener("click", leaveFocus);
 document.getElementById("brand").addEventListener("click", (event) => {
   event.preventDefault();
-  focusId = -1;
-  previousFocusId = -1;
-  showDetail(null);
-  recenter();
+  leaveFocus();
 });
 document.getElementById("search-open").addEventListener("click", openSearch);
 document.getElementById("search-close").addEventListener("click", closeSearch);
@@ -1422,55 +1514,110 @@ document.addEventListener("keydown", (event) => {
 });
 
 // ---------------------------------------------------------------------------
-// Agent tools: the voice guide manipulates the same curiosity mechanics.
+// The atlas, as the voice guide sees it.
+//
+// Four moves and one view. Everything under web/voice/ depends on this object
+// and on nothing else in this file, so the renderer never learns that a voice
+// exists and the voice layer never learns how a cell is drawn.
 // ---------------------------------------------------------------------------
-const agentTools = {
+let voice = null;
+
+function describeNode(index) {
+  const node = nodes[index];
+  return {
+    name: node.name,
+    kind: node.kind,
+    fragment: node.fragment,
+    note: node.note,
+    question: node.question,
+    source: node.source,
+    neighbors: neighborsOf(index).map((neighbor) => ({
+      name: nodes[neighbor.index].name,
+      relation: neighbor.relation,
+    })),
+  };
+}
+
+// Move the camera so a set of thoughts is comfortably on screen together,
+// without ever zooming out to the whole territory on a phone.
+function holdInView(indices) {
+  cancelCameraMomentum();
+  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+  for (const index of indices) {
+    const node = nodes[index];
+    minX = Math.min(minX, node.x - node._R);
+    maxX = Math.max(maxX, node.x + node._R);
+    minY = Math.min(minY, node.y - node._R);
+    maxY = Math.max(maxY, node.y + node._R);
+  }
+  cam.tx = (minX + maxX) / 2;
+  cam.ty = (minY + maxY) / 2;
+  const fit = Math.min(VW / ((maxX - minX) * 1.35), VH / ((maxY - minY) * 1.45));
+  cam.ts = Math.max(isPhone() ? 0.6 : 0.5, Math.min(fit, 1.15));
+}
+
+const atlasTools = {
   focus({ query }) {
     const index = findNode(query);
     if (index < 0) return { found: false, query };
     focusNode(index);
-    const node = nodes[index];
-    return {
-      found: true,
-      name: node.name,
-      fragment: node.fragment,
-      note: node.note,
-      question: node.question,
-      source: node.source,
-      neighbors: neighborsOf(index).map((neighbor) => nodes[neighbor.index].name),
-    };
+    return { found: true, ...describeNode(index) };
   },
+
   highlight({ query }) {
     const normalized = (query || "").toLowerCase();
     const hits = [];
-    nodes.forEach((node) => {
+    nodes.forEach((node, index) => {
       if (node.guide) return;
       const haystack = [node.name, node.kind, node.fragment, node.note, ...node.tags].join(" ").toLowerCase();
       if (haystack.includes(normalized)) {
-        node.highlight = 1;
+        salience.raise(index, 0.6);
         hits.push(node.name);
       }
     });
-    return { highlighted: hits };
+    return { theme: query, thoughts: hits, count: hits.length };
   },
+
+  // Several thoughts at once, each as alive as the backend says. The view
+  // holds the set; nothing opens, nothing is announced.
+  attend({ thoughts }) {
+    const attended = [];
+    const missing = [];
+    const seen = new Set();
+    for (const item of Array.isArray(thoughts) ? thoughts : []) {
+      const query = typeof item === "string" ? item : item?.query;
+      const weight = typeof item === "object" && Number.isFinite(item?.weight) ? item.weight : 0.75;
+      const index = findNode(query, 24);
+      if (index < 0) { missing.push(query); continue; }
+      salience.raise(index, Math.max(0.2, Math.min(1, weight)));
+      if (seen.has(index)) continue;
+      seen.add(index);
+      attended.push({ name: nodes[index].name, weight, index });
+    }
+    if (attended.length) holdInView(attended.map((entry) => entry.index));
+    return { attended: attended.map(({ name, weight }) => ({ name, weight })), missing };
+  },
+
   connect({ a, b, relation }) {
     const first = findNode(a);
     const second = findNode(b);
-    if (first < 0 || second < 0) return { ok: false, a, b };
+    if (first < 0 || second < 0) {
+      return { ok: false, missing: first < 0 ? a : b };
+    }
     edges.push({ a: first, b: second, relation: relation || "a connection surfaced in conversation" });
-    nodes[first].highlight = 1;
-    nodes[second].highlight = 1;
-    cam.tx = (nodes[first].x + nodes[second].x) / 2;
-    cam.ty = (nodes[first].y + nodes[second].y) / 2;
-    cam.ts = 0.95;
-    return { ok: true, connected: [nodes[first].name, nodes[second].name], relation };
+    salience.raise(first, 0.85);
+    salience.raise(second, 0.85);
+    holdInView([first, second]);
+    document.getElementById("link-count").textContent = String(edges.length);
+    return { ok: true, pair: [nodes[first].name, nodes[second].name], relation };
   },
+
   spawn_concept({ name, note, near, question }) {
-    if (!name) return { ok: false };
+    if (!name) return { ok: false, reason: "a new thought needs a name" };
     const id = `spawn-${name.toLowerCase().replace(/[^a-z0-9]+/g, "-")}-${nodes.length}`;
     const anchorIndex = near ? findNode(near) : focusId;
     const anchor = anchorIndex >= 0 ? nodes[anchorIndex] : { x: WORLD.w / 2, y: WORLD.h / 2 };
-    const angle = ((hashString(id) % 628) / 100);
+    const angle = (hashString(id) % 628) / 100;
     const concept = makeNode({
       id,
       name,
@@ -1491,153 +1638,30 @@ const agentTools = {
     document.getElementById("concept-count").textContent = String(nodes.filter((node) => !node.guide).length);
     document.getElementById("link-count").textContent = String(edges.length);
     focusNode(nodes.length - 1);
-    return { ok: true, name, anchored_to: anchorIndex >= 0 ? anchor.name : null };
-  },
-  get_view_state() {
-    const visible = nodes
-      .filter((node) => !node.guide && node._poly?.some(([x, y]) => x > 0 && x < VW && y > 0 && y < VH))
-      .map((node) => node.name);
-    return { focused: focusId >= 0 ? nodes[focusId].name : null, visible, trail: [...trail] };
+    return { ok: true, name, near: anchorIndex >= 0 ? anchor.name : null };
   },
 };
 
-// ---------------------------------------------------------------------------
-// Voice: OpenAI Realtime over WebRTC. The server keeps the key private.
-// ---------------------------------------------------------------------------
-let pc = null;
-let dc = null;
-let localStream = null;
-let micMuted = false;
-
-function instructions() {
-  return `You are Abacus, a concise and curious voice guide through Fran's living thought atlas. ` +
-    `Speak in one or two warm, specific sentences. Do not lecture. When a concept becomes relevant, call focus so the interface opens it. ` +
-    `Use its fragment, note, question, and source as your ground truth; never invent what a vault note contains. ` +
-    `Use highlight for a theme, connect when the conversation reveals a meaningful relation, and spawn_concept only for a genuinely new idea. ` +
-    `Prefer ending with one good question that makes the user want to follow another thread.`;
-}
-
-const toolSchemas = [
-  { type: "function", name: "focus", description: "Open the most relevant thought in the atlas.", parameters: { type: "object", properties: { query: { type: "string" } }, required: ["query"] } },
-  { type: "function", name: "highlight", description: "Emphasize thoughts matching a theme.", parameters: { type: "object", properties: { query: { type: "string" } }, required: ["query"] } },
-  { type: "function", name: "connect", description: "Connect two thoughts with a short explanation.", parameters: { type: "object", properties: { a: { type: "string" }, b: { type: "string" }, relation: { type: "string" } }, required: ["a", "b"] } },
-  { type: "function", name: "spawn_concept", description: "Grow one genuinely new thought near a related existing thought.", parameters: { type: "object", properties: { name: { type: "string" }, note: { type: "string" }, near: { type: "string" }, question: { type: "string" } }, required: ["name"] } },
-  { type: "function", name: "get_view_state", description: "Return what the visitor is currently seeing and has followed.", parameters: { type: "object", properties: {} } },
-];
-
-function sendEvent(event) {
-  if (dc?.readyState === "open") dc.send(JSON.stringify(event));
-}
-
-function configureSession() {
-  sendEvent({
-    type: "session.update",
-    session: {
-      type: "realtime",
-      model: MODEL,
-      output_modalities: ["audio"],
-      instructions: instructions(),
-      tools: toolSchemas,
-      tool_choice: "auto",
-    },
-  });
-}
-
-async function handleTool(item) {
-  let args = {};
-  try { args = JSON.parse(item.arguments || "{}"); } catch { args = {}; }
-  const fn = agentTools[item.name];
-  const output = fn ? fn(args) : { error: "unknown tool" };
-  sendEvent({
-    type: "conversation.item.create",
-    item: { type: "function_call_output", call_id: item.call_id, output: JSON.stringify(output) },
-  });
-  sendEvent({ type: "response.create" });
-}
-
-function setVoiceLabel(text) {
-  document.getElementById("voice-label").textContent = text;
-}
-
-function handleVoiceEvent(event) {
-  if (event.type === "input_audio_buffer.speech_started") setVoiceLabel("Listening");
-  if (event.type === "input_audio_buffer.speech_stopped") setVoiceLabel("Following the thought");
-  if (event.type === "response.done") {
-    for (const item of event.response?.output || []) {
-      if (item.type === "function_call") handleTool(item);
-    }
-    setVoiceLabel("Abacus is live");
-  }
-  if (event.type === "error") {
-    setVoiceLabel("Voice error");
-    console.error("Realtime error", event.error);
-  }
-}
-
-async function connectVoice() {
-  const button = document.getElementById("voice-button");
-  setVoiceLabel("Connecting");
-  button.disabled = true;
-  dismissWelcome();
-
-  pc = new RTCPeerConnection();
-  dc = pc.createDataChannel("oai-events");
-  pc.ontrack = (event) => { document.getElementById("remote-audio").srcObject = event.streams[0]; };
-  pc.onconnectionstatechange = () => {
-    const state = pc?.connectionState;
-    if (state === "connected") {
-      setVoiceLabel("Abacus is live");
-      button.classList.add("live");
-      button.disabled = false;
-      document.getElementById("mic-toggle").hidden = false;
-    }
-    if (["failed", "disconnected", "closed"].includes(state)) stopVoice();
+// What the guide is told the visitor can see. Pushed as context rather than
+// fetched by a tool, so "that one" resolves without a round trip.
+function readView() {
+  const focused = focusId >= 0 && !nodes[focusId]?.guide ? nodes[focusId] : null;
+  return {
+    focus: focused
+      ? { name: focused.name, kind: focused.kind, source: focused.source, question: focused.question }
+      : null,
+    visible: nodes
+      .filter((node) => !node.guide && node._poly?.some(([x, y]) => x > 0 && x < VW && y > 0 && y < VH))
+      .map((node) => node.name),
+    trail: trail.map((id) => nodes.find((node) => node.id === id)?.name).filter(Boolean),
+    alive: salience.top(6, 0.25).map(({ index }) => nodes[index].name),
   };
-  dc.addEventListener("open", configureSession);
-  dc.addEventListener("message", (event) => handleVoiceEvent(JSON.parse(event.data)));
-
-  localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-  pc.addTrack(localStream.getAudioTracks()[0], localStream);
-  const offer = await pc.createOffer();
-  await pc.setLocalDescription(offer);
-  const response = await fetch("/session", { method: "POST", body: offer.sdp, headers: { "Content-Type": "application/sdp" } });
-  if (!response.ok) throw new Error(await response.text());
-  await pc.setRemoteDescription({ type: "answer", sdp: await response.text() });
 }
 
-function stopVoice(label = "Talk to Abacus") {
-  try { dc?.close(); } catch {}
-  try { pc?.close(); } catch {}
-  localStream?.getTracks().forEach((track) => track.stop());
-  pc = null;
-  dc = null;
-  localStream = null;
-  const button = document.getElementById("voice-button");
-  button.classList.remove("live");
-  button.disabled = false;
-  document.getElementById("mic-toggle").hidden = true;
-  setVoiceLabel(label);
-}
-
-document.getElementById("voice-button").addEventListener("click", async () => {
-  if (pc && ["connected", "connecting"].includes(pc.connectionState)) {
-    stopVoice();
-    return;
-  }
-  try {
-    await connectVoice();
-  } catch (error) {
-    console.error(error);
-    const label = /OPENAI_API_KEY/.test(error.message) ? "Needs API key" : /Permission|Microphone|denied/i.test(error.message) ? "Mic blocked" : "Voice error";
-    stopVoice(label);
-  }
-});
-
-document.getElementById("mic-toggle").addEventListener("click", () => {
-  micMuted = !micMuted;
-  localStream?.getAudioTracks().forEach((track) => { track.enabled = !micMuted; });
-  document.getElementById("mic-toggle").textContent = micMuted ? "Unmute" : "Mute";
-});
+voice = installVoice({ tools: atlasTools, read: readView, onOpen: dismissWelcome });
+// ?debug exposes the same port the voice layer uses, so a tool can be tried
+// from the console without spending a voice session on it.
+if (new URLSearchParams(location.search).has("debug")) window.abacus = { tools: atlasTools, read: readView, salience };
 
 // ---------------------------------------------------------------------------
 // Boot.
