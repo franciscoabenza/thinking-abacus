@@ -5,7 +5,10 @@ import { timingSafeEqual } from "node:crypto";
 import { abacusSession } from "./web/voice/agent.js";
 
 const PORT = Number(process.env.PORT) || 5174;
-const HOST = process.env.HOST || "127.0.0.1";
+// 0.0.0.0 so a host container (Railway, Fly, Docker, …) can route to this
+// process; still reachable at 127.0.0.1 for local use. Override with HOST if
+// you specifically need to bind to one interface only.
+const HOST = process.env.HOST || "0.0.0.0";
 const PUBLIC_DIR = new URL("./web/", import.meta.url);
 const MAX_OFFER_BYTES = 64 * 1024;
 // Session traces: JSON lines per conversation, one folder per day.
