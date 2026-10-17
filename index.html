@@ -339,7 +339,10 @@
         gap: 1rem;
     }
 
-    @media (hover: none) {
+    /* Phones report hover: none and a coarse pointer. A plain (hover: none)
+       query also matches some desktop sessions whose primary pointer is
+       "none", which would hide the hover fill from a real mouse. */
+    @media (hover: none) and (pointer: coarse) {
         .cta:hover {
             background: transparent;
             border-color: rgba(243, 241, 236, 0.2);
